@@ -36,23 +36,25 @@ export const SynthDataWizard = () => {
   };
 
   const handleExport = async () => {
-    try{
+    try {
       await axios.post("http://localhost:8000/api/my-endpoint", {
-      rows,
-      rowCount,
-      format,
-      lineEnding,
+        rows,
+        rowCount,
+        format,
+        lineEnding,
       });
       alert("Export erfolgreich!");
     } catch (error) {
       alert("Fehler beim Exportieren");
-    }    
+      console.log(error);
+    }
   };
 
   return (
     <div
       className="px-5 py-5 text-white"
       style={{
+        overflowX: "auto",
         background:
           "linear-gradient(to bottom,rgb(111, 5, 138),rgb(14, 205, 135))",
         minHeight: "100vh",

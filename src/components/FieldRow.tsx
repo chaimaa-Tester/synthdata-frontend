@@ -9,15 +9,19 @@ export const FieldRow = ({
   onChange: (idx: number, field: string, value: any) => void;
   onOpenModal: () => void;
 }) => (
-  <div className="row mb-2 align-items-center" key={idx}>
-    <div className="col-md-2">
+  <div
+    className="row mb-2 align-items-center flex-nowrap"
+    style={{ overflowX: "auto", minWidth: 1200 }}
+    key={idx}
+  >
+    <div className="col-2">
       <input
         className="form-control"
         value={row.name}
         onChange={(e) => onChange(idx, "name", e.target.value)}
       />
     </div>
-    <div className="col-md-2">
+    <div className="col-2">
       <select
         className="form-select"
         value={row.type}
@@ -28,14 +32,14 @@ export const FieldRow = ({
         <option value="Datum">Datum</option>
       </select>
     </div>
-    <div className="col-md-2">
+    <div className="col-2">
       <input
         className="form-control"
         value={row.dependency}
         onChange={(e) => onChange(idx, "dependency", e.target.value)}
       />
     </div>
-    <div className="col-md-3 d-flex align-items-start">
+    <div className="col-3 d-flex align-items-start">
       <input
         type="checkbox"
         className="form-check-input me-2"
@@ -44,7 +48,7 @@ export const FieldRow = ({
       />
       <label className="form-check-label">In Tabelle anzeigen</label>
     </div>
-    <div className="col-md-3">
+    <div className="col-3">
       <button
         className="btn"
         style={{
