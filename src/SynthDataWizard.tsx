@@ -1,6 +1,10 @@
 import { useState } from "react";
+import axios from "axios";
 import logo from "./assets/logo.png";
 import { DistributionModal } from "./components/DistributionModal";
+import { FieldRow } from "./components/FieldRow";
+import { FieldTableHeader } from "./components/FieldTableHeader";
+import { ExportOptions } from "./components/ExportOptions";
 
 const defaultRow = {
   name: "",
@@ -18,13 +22,32 @@ export const SynthDataWizard = () => {
   ]);
   const [rowCount, setRowCount] = useState(1);
   const [format, setFormat] = useState("CSV");
-  const [lineEnding, setLineEnding] = useState("CRLF");
+  const [lineEnding, setLineEnding] = useState("Windows(CRLF)");
   const [showModal, setShowModal] = useState(false);
 
   const handleAddRow = () => setRows([...rows, defaultRow]);
   const handleOpenModal = () => setShowModal(true);
   const handleCloseModal = () => setShowModal(false);
 
+  const handleRowChange = (idx: number, field: string, value: any) => {
+    const newRows = [...rows];
+    newRows[idx] = { ...newRows[idx], [field]: value };
+    setRows(newRows);
+  };
+
+  const handleExport = async () => {
+    try{
+      await axios.post("http://localhost:8000/api/my-endpoint", {
+      rows,
+      rowCount,
+      format,
+      lineEnding,
+      });
+      alert("Export erfolgreich!");
+    } catch (error) {
+      alert("Fehler beim Exportieren");
+    }    
+  };
 
   return (
     <div
@@ -47,96 +70,40 @@ export const SynthDataWizard = () => {
         </h3>
       </div>
 
-      <div className="row mb-3 fw-bold">
-        <div className="col-md-2">Feldname</div>
-        <div className="col-md-2">Feldtyp</div>
-        <div className="col-md-2">Abhängigkeit</div>
-        <div className="col-md-3">Tabelle</div>
-        <div className="col-md-3">Verteilung</div>
-      </div>
+      <FieldTableHeader />
 
       {rows.map((row, idx) => (
-        <div className="row mb-2 align-items-center" key={idx}>
-          <div className="col-md-2">
-            <input className="form-control" />
-          </div>
-          <div className="col-md-2">
-            <select className="form-select">
-              <option>String</option>
-              <option>Zahl</option>
-              <option>Datum</option>
-            </select>
-          </div>
-          <div className="col-md-2">
-            <input className="form-control"></input>
-          </div>
-          <div className="col-md-3 d-flex align-items-start">
-            <input type="checkbox" className="form-check-input me-2" />
-            <label className="form-check-label">In Tabelle anzeigen</label>
-          </div>
-          <div className="col-md-3">
-            <button
-              className="btn"
-              style={{
-                backgroundColor: "rgb(115, 67, 131)",
-                color: "white",
-                fontSize: 20,
-              }}
-              onClick={handleOpenModal}        
-            >
-              Verteilung spezifizieren
-            </button>
-          </div>
-        </div>
+        <FieldRow
+          key={idx}
+          row={row}
+          idx={idx}
+          onChange={handleRowChange}
+          onOpenModal={handleOpenModal}
+        />
       ))}
 
       <DistributionModal show={showModal} onClose={handleCloseModal} />
 
-      <div className="d-flex gap-3 mb-4">
+      <div className="mb-4">
         <button className="btn btn-outline-light" onClick={handleAddRow}>
-          + Füge neue Reihe hinzu
+          + Neue Reihe
         </button>
       </div>
 
-      <div className="row text-white mb-4">
-        <div className="col-md-4">
-          <label className="form-label me-2">Zeilen:</label>
-          <input
-            type="number"
-            className="form-control"
-            value={rowCount}
-            onChange={(e) => setRowCount(parseInt(e.target.value))}
-          />
-        </div>
-        <div className="col-md-4">
-          <label className="form-label me-2">Format:</label>
-          <select
-            className="form-select"
-            value={format}
-            onChange={(e) => setFormat(e.target.value)}
-          >
-            <option>CSV</option>
-            <option>Excel</option>
-            <option>JSON</option>
-          </select>
-        </div>
-        <div className="col-md-4">
-          <label className="form-label me-2">Zeilenende:</label>
-          <select
-            className="form-select"
-            value={lineEnding}
-            onChange={(e) => setLineEnding(e.target.value)}
-          >
-            <option>Windows(CRLF)</option>
-            <option>Unix(LF)</option>
-          </select>
-        </div>
-      </div>
+      <ExportOptions
+        rowCount={rowCount}
+        setRowCount={setRowCount}
+        format={format}
+        setFormat={setFormat}
+        lineEnding={lineEnding}
+        setLineEnding={setLineEnding}
+      />
 
       <div className="text-center">
         <button
           className="btn btn-lg px-5"
           style={{ backgroundColor: "rgb(115, 67, 131)", color: "white" }}
+          onClick={handleExport}
         >
           Exportieren
         </button>
