@@ -55,8 +55,8 @@ export const SynthDataWizard = () => {
       className="px-5 py-5 text-white"
       style={{
         overflowX: "auto",
-        background:
-          "linear-gradient(to bottom,rgb(111, 5, 138),rgb(14, 205, 135))",
+        overflowY: "auto",
+        background: "rgb(31, 53, 88)",
         minHeight: "100vh",
       }}
     >
@@ -101,7 +101,10 @@ export const SynthDataWizard = () => {
         setLineEnding={setLineEnding}
       />
 
-      <div className="text-center">
+      <div
+        className="text-center flex-nowrap"
+        style={{ overflowX: "auto", minWidth: 1200 }}
+      >
         <button
           className="btn btn-lg px-5"
           style={{ backgroundColor: "rgb(115, 67, 131)", color: "white" }}

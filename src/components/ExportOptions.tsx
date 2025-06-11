@@ -13,8 +13,11 @@ export const ExportOptions = ({
   lineEnding: string;
   setLineEnding: (l: string) => void;
 }) => (
-  <div className="row mb-3">
-    <div className="col-md-4">
+  <div
+    className="row mb-3 flex-nowrap"
+    style={{ overflowX: "auto", minWidth: 1200 }}
+  >
+    <div className="col-4">
       <label className="form-label">Zeilen:</label>
       <input
         type="number"
@@ -23,7 +26,7 @@ export const ExportOptions = ({
         onChange={(e) => setRowCount(parseInt(e.target.value))}
       />
     </div>
-    <div className="col-md-4">
+    <div className="col-4">
       <label className="form-label">Format:</label>
       <select
         className="form-select"
@@ -35,7 +38,7 @@ export const ExportOptions = ({
         <option>JSON</option>
       </select>
     </div>
-    <div className="col-md-4">
+    <div className="col-4">
       <label className="form-label">Zeilenende:</label>
       <select
         className="form-select"
