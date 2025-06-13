@@ -8,26 +8,37 @@ import { ExportOptions } from "./components/ExportOptions";
 
 const defaultRow = {
   name: "",
-  type: "",
+  type: "String",
   dependency: "",
-  showInTable: false,
+  DoNotShowInTable: false,
+  distribution: { distribution: "", parameterA: "", parameterB: "" },
 };
 
 export const SynthDataWizard = () => {
-  const [rows, setRows] = useState([
-    defaultRow,
-    defaultRow,
-    defaultRow,
-    defaultRow,
-  ]);
+  const [rows, setRows] = useState([defaultRow, defaultRow, defaultRow]);
   const [rowCount, setRowCount] = useState(1);
   const [format, setFormat] = useState("CSV");
   const [lineEnding, setLineEnding] = useState("Windows(CRLF)");
   const [showModal, setShowModal] = useState(false);
+  const [activeRowIdx, setActiveRowIdx] = useState<number | null>(null);
 
   const handleAddRow = () => setRows([...rows, defaultRow]);
-  const handleOpenModal = () => setShowModal(true);
+  const handleOpenModal = (idx: number) => {
+    setActiveRowIdx(idx);
+    setShowModal(true);
+  };
   const handleCloseModal = () => setShowModal(false);
+  const handleSaveDistribution = (distributionData: any) => {
+    if (activeRowIdx === null) return;
+    const newRows = [...rows];
+    newRows[activeRowIdx] = {
+      ...newRows[activeRowIdx],
+      distribution: distributionData,
+    };
+    setRows(newRows);
+    setShowModal(false);
+    setActiveRowIdx(null);
+  };
 
   const handleRowChange = (idx: number, field: string, value: any) => {
     const newRows = [...rows];
@@ -48,6 +59,10 @@ export const SynthDataWizard = () => {
       alert("Fehler beim Exportieren");
       console.log(error);
     }
+  };
+
+  const handleDeleteRow = (idx: number) => {
+    setRows((rows) => rows.filter((_, i) => i !== idx));
   };
 
   return (
@@ -79,12 +94,20 @@ export const SynthDataWizard = () => {
           key={idx}
           row={row}
           idx={idx}
-          onChange={handleRowChange}
-          onOpenModal={handleOpenModal}
+          onChange={() => handleRowChange}
+          onOpenModal={() => handleOpenModal(idx)}
+          handleDeleteRow={handleDeleteRow}
         />
       ))}
 
-      <DistributionModal show={showModal} onClose={handleCloseModal} />
+      <DistributionModal
+        show={showModal}
+        onClose={handleCloseModal}
+        onSave={handleSaveDistribution} // Funktioniert nicht, speichert nichts
+        initialData={
+          activeRowIdx !== null ? rows[activeRowIdx].distribution : undefined
+        }
+      />
 
       <div className="mb-4">
         <button className="btn btn-outline-light" onClick={handleAddRow}>
