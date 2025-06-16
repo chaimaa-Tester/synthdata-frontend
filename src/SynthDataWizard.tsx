@@ -94,7 +94,7 @@ export const SynthDataWizard = () => {
           key={idx}
           row={row}
           idx={idx}
-          onChange={() => handleRowChange}
+          onChange={handleRowChange}
           onOpenModal={() => handleOpenModal(idx)}
           handleDeleteRow={handleDeleteRow}
         />
