@@ -48,16 +48,32 @@ export const SynthDataWizard = () => {
 
   const handleExport = async () => {
     try {
-      await axios.post("http://localhost:8000/api/my-endpoint", {
-        rows,
-        rowCount,
-        format,
-        lineEnding,
-      });
-      alert("Export erfolgreich!");
+      const response = await axios.post(
+        "http://localhost:8000/api/export",
+        {
+          rows,
+          rowCount,
+          format,
+          lineEnding,
+        },
+        {
+          responseType: "blob", // ⬅️ Wichtig für Datei-Download!
+        }
+      );
+  
+      // Datei erzeugen & automatisch herunterladen
+      const blob = new Blob([response.data], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "synthdata.csv"; // ⬅️ Dateiname
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+  
     } catch (error) {
+      console.error("Fehler beim Export:", error);
       alert("Fehler beim Exportieren");
-      console.log(error);
     }
   };
 
