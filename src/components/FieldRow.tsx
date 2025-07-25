@@ -1,21 +1,45 @@
+/**
+ * FieldRow-Komponente
+ *
+ * Stellt eine einzelne Zeile für die Felddefinition dar.
+ * Jede Zeile enthält:
+ * - Draghandle zum Verschieben der Zeile (Drag & Drop)
+ * - Eingabefeld für den Namen des Feldes
+ * - Auswahlfeld für den Typ (String, Double, Date)
+ * - Eingabefeld für Abhängigkeiten
+ * - Button zum Öffnen des Modals für die Verteilungsspezifikation
+ * - Button zum Löschen der Zeile
+ *
+ * Die Werte und Aktionen werden über Props gesteuert.
+ */
 export const FieldRow = ({
   row,
   idx,
   onChange,
   onOpenModal,
   handleDeleteRow,
+  dragHandleProps,
 }: {
   row: any;
   idx: number;
   onChange: (idx: number, field: string, value: any) => void;
   onOpenModal: (idx: number) => void;
   handleDeleteRow: (idx: number) => void;
+  dragHandleProps?: any;
 }) => (
   <div
     className="row mb-2 align-items-center flex-nowrap"
-    style={{ overflowX: "auto", minWidth: 1200 }}
+    style={{ overflowX: "auto", minWidth: 1200 }} // Layout für horizontales Scrollen und Mindestbreite
     key={idx}
   >
+    {/* Draghandle zum Verschieben der Zeile */}
+    <div
+      className="col-auto d-flex align-items-center px-0"
+      {...dragHandleProps}
+    >
+      <span style={{ cursor: "grab", fontSize: 20 }}>☰</span>
+    </div>
+    {/* Eingabefeld für den Namen */}
     <div className="col-2">
       <input
         className="form-control"
@@ -23,6 +47,7 @@ export const FieldRow = ({
         onChange={(e) => onChange(idx, "name", e.target.value)}
       />
     </div>
+    {/* Auswahlfeld für den Typ */}
     <div className="col-2">
       <select
         className="form-select"
@@ -34,6 +59,7 @@ export const FieldRow = ({
         <option value="Date">Date</option>
       </select>
     </div>
+    {/* Eingabefeld für Abhängigkeiten */}
     <div className="col-2">
       <input
         className="form-control"
@@ -41,16 +67,9 @@ export const FieldRow = ({
         onChange={(e) => onChange(idx, "dependency", e.target.value)}
       />
     </div>
-    <div className="col-3 d-flex align-items-start">
-      <input
-        type="checkbox"
-        className="form-check-input me-2"
-        checked={row.DoNotShowInTable}
-        onChange={(e) => onChange(idx, "DoNotShowInTable", e.target.checked)}
-      />
-      <label className="form-check-label">Nicht in Tabelle anzeigen</label>
-    </div>
+    {/* Buttons für Verteilungsspezifikation und Löschen */}
     <div className="col-3 d-flex align-items-center">
+      {/* Öffnet das Modal zur Verteilungsspezifikation */}
       <button
         className="btn me-3"
         style={{
@@ -62,6 +81,7 @@ export const FieldRow = ({
       >
         Verteilung spezifizieren
       </button>
+      {/* Löscht die aktuelle Zeile */}
       <button
         type="button"
         className="btn"
@@ -69,6 +89,7 @@ export const FieldRow = ({
         style={{ padding: 0, background: "none", border: "none" }}
         onClick={() => handleDeleteRow(idx)}
       >
+        {/* Papierkorb-Icon als SVG */}
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="22"

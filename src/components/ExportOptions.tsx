@@ -1,3 +1,13 @@
+/**
+ * ExportOptions-Komponente
+ *
+ * Stellt die Eingabefelder für die Export-Einstellungen bereit:
+ * - Anzahl der zu generierenden Zeilen
+ * - Exportformat (CSV, Excel, JSON)
+ * - Zeilenende (Windows oder Unix)
+ *
+ * Die Werte werden über Props aus der Elternkomponente gesteuert und bei Änderung zurückgegeben.
+ */
 export const ExportOptions = ({
   rowCount,
   setRowCount,
@@ -15,9 +25,10 @@ export const ExportOptions = ({
 }) => (
   <div
     className="row mb-3 flex-nowrap"
-    style={{ overflowX: "auto", minWidth: 1200 }}
+    style={{ overflowX: "auto", minWidth: 1200 }} // Layout für horizontales Scrollen bei vielen Feldern
   >
-    <div className="col-4">
+    {/* Eingabefeld für die Anzahl der Zeilen */}
+    <div className="col-2">
       <label className="form-label">Zeilen:</label>
       <input
         type="number"
@@ -26,7 +37,8 @@ export const ExportOptions = ({
         onChange={(e) => setRowCount(parseInt(e.target.value))}
       />
     </div>
-    <div className="col-4">
+    {/* Auswahlfeld für das Exportformat */}
+    <div className="col-2">
       <label className="form-label">Format:</label>
       <select
         className="form-select"
@@ -38,7 +50,8 @@ export const ExportOptions = ({
         <option>JSON</option>
       </select>
     </div>
-    <div className="col-4">
+    {/* Auswahlfeld für das Zeilenende */}
+    <div className="col-2">
       <label className="form-label">Zeilenende:</label>
       <select
         className="form-select"

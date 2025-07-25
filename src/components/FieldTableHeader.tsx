@@ -1,12 +1,27 @@
+/**
+ * FieldTableHeader-Komponente
+ *
+ * Stellt die Kopfzeile der Feld-Tabelle dar.
+ * Die Spaltenüberschriften sind:
+ * - Feldname
+ * - Feldtyp
+ * - Abhängigkeit
+ * - Verteilung
+ *
+ * Das Layout ist horizontal scrollbar, falls die Spalten nicht auf den Bildschirm passen.
+ */
 export const FieldTableHeader = () => (
   <div
     className="row mb-2 fw-bold flex-nowrap"
-    style={{ overflowX: "auto", minWidth: 1200 }}
+    style={{ overflowX: "auto", minWidth: 1200 }} // Ermöglicht horizontales Scrollen bei vielen Spalten
   >
-    <div className="col-md-2">Feldname</div>
-    <div className="col-md-2">Feldtyp</div>
-    <div className="col-md-2">Abhängigkeit</div>
-    <div className="col-md-3">Tabelle</div>
-    <div className="col-md-3">Verteilung</div>
+    {/* Spaltenüberschrift für den Namen des Feldes */}
+    <div className="col-md-2 px-4">Feldname</div>
+    {/* Spaltenüberschrift für den Typ des Feldes */}
+    <div className="col-md-2 px-4">Feldtyp</div>
+    {/* Spaltenüberschrift für die Abhängigkeit */}
+    <div className="col-md-2 px-4">Abhängigkeit</div>
+    {/* Spaltenüberschrift für die Verteilung */}
+    <div className="col-md-3 px-4">Verteilung</div>
   </div>
 );
