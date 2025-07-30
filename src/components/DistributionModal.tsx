@@ -10,7 +10,7 @@ type DistributionModalProps = {
 
 // Standardstruktur für die Verteilungsdaten
 const defaultRow = {
-  distribution: "",
+  distribution: "normal", // Default-Verteilung
   parameterA: "",
   parameterB: "",
 };
@@ -130,7 +130,7 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
               }}
             >
               <option value="normal">Normalverteilung</option>
-              <option value="equal">Gleichverteilung</option>
+              <option value="uniform">Gleichverteilung</option>
               <option value="gamma">Gammaverteilung</option>
             </select>
           </div>

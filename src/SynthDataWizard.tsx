@@ -23,7 +23,7 @@ const defaultRow = {
   name: "",
   type: "String",
   dependency: "",
-  distribution: {
+  distributionConfig: {
     distribution: "",
     parameterA: "",
     parameterB: "",
@@ -80,7 +80,7 @@ export const SynthDataWizard = () => {
     const newRows = [...rows];
     newRows[activeRowIdx] = {
       ...newRows[activeRowIdx],
-      distribution: distributionData,
+      distributionConfig: distributionData,
     };
     setRows(newRows);
     setShowModal(false);
@@ -122,7 +122,7 @@ export const SynthDataWizard = () => {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
-
+  
   // Render der Hauptoberfläche
   return (
     <DndContext
@@ -183,7 +183,7 @@ export const SynthDataWizard = () => {
           onClose={handleCloseModal}
           onSave={handleSaveDistribution}
           initialData={
-            activeRowIdx !== null ? rows[activeRowIdx].distribution : undefined
+            activeRowIdx !== null ? rows[activeRowIdx].distributionConfig : undefined
           }
         />
 
