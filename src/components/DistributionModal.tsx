@@ -72,7 +72,7 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
   // Labels für die Parameter je nach gewählter Verteilung
   const distributionParams: Record<string, { a: string; b: string }> = {
     normal: { a: "μ", b: "σ" },
-    equal: { a: "Min", b: "Max" },
+    uniform: { a: "Min", b: "Max" },
     gamma: { a: "μ", b: "σ" },
   };
 
@@ -190,7 +190,7 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
           </div>
           {/* Dynamisch generierte zusätzliche Parameter */}
           {(form.extraParams || []).map((param: any, idx: any) => (
-            <div className="col-1" key={idx}>
+            <div className="col-1 d-flex align-items-center" key={idx}>
               <input
                 className="form-control"
                 value={param}
@@ -200,8 +200,31 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
                   form.distribution
                 }
               />
+              <button
+                className="btn ms-1"
+                style={{
+                  backgroundColor: "rgb(115, 67, 131)",
+                  color: "white",
+                  fontSize: 20,
+                  width: "24px",
+                  height: "24px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 0
+                }}
+                onClick={() => {
+                  const newExtraParams = [...(form.extraParams || [])];
+                  newExtraParams.splice(idx, 1);
+                  setForm({ ...form, extraParams: newExtraParams });
+                }}
+                title="Parameter entfernen"
+              >
+                ×
+              </button>
             </div>
           ))}
+
           {/* Button zum Hinzufügen eines weiteren Parameters */}
           <div className="col-1">
             <button
