@@ -35,7 +35,7 @@ const defaultRow = {
 export const SynthDataWizard = () => {
   // State für alle Zeilen (Felder), Exportoptionen und Modalfenster
   const [rows, setRows] = useState([defaultRow, defaultRow, defaultRow]);
-  const [rowCount, setRowCount] = useState(1);
+  const [rowCount, setRowCount] = useState(10);
   const [format, setFormat] = useState("CSV");
   const [lineEnding, setLineEnding] = useState("Windows(CRLF)");
   const [showModal, setShowModal] = useState(false);

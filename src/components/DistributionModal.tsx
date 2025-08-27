@@ -167,6 +167,7 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
           <div className="col-1">
             <input
               className="form-control"
+              type="date"
               value={form.parameterA}
               onChange={(e) => setForm({ ...form, parameterA: e.target.value })}
               placeholder={getParamLabels(form.distribution).a}
@@ -174,11 +175,13 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
                 getAllowedDistributions(fieldType).length === 0 ||
                 form.distribution
               }
+              style={{ width: "auto" }}
             />
           </div>
-          <div className="col-1">
+          <div className="col-1 ms-5">
             <input
               className="form-control"
+              type="date"
               value={form.parameterB}
               onChange={(e) => setForm({ ...form, parameterB: e.target.value })}
               placeholder={getParamLabels(form.distribution).b}
@@ -186,19 +189,22 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
                 getAllowedDistributions(fieldType).length === 0 ||
                 form.distribution
               }
+              style={{ width: "auto" }}
             />
           </div>
           {/* Dynamisch generierte zusätzliche Parameter */}
           {(form.extraParams || []).map((param: any, idx: any) => (
-            <div className="col-1 d-flex align-items-center" key={idx}>
+            <div className="col-1 d-flex align-items-center ms-5" key={idx}>
               <input
                 className="form-control"
+                type="date"
                 value={param}
                 onChange={(e) => handleExtraParamChange(idx, e.target.value)}
                 disabled={
                   getAllowedDistributions(fieldType).length === 0 ||
                   form.distribution
                 }
+                style={{width: "auto"}}
               />
               <button
                 className="btn ms-1"
@@ -211,7 +217,7 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  padding: 0
+                  padding: 0,
                 }}
                 onClick={() => {
                   const newExtraParams = [...(form.extraParams || [])];
@@ -226,7 +232,7 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
           ))}
 
           {/* Button zum Hinzufügen eines weiteren Parameters */}
-          <div className="col-1">
+          <div className="col-1 ms-5">
             <button
               className="btn"
               style={{
