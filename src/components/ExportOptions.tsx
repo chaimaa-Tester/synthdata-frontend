@@ -32,9 +32,13 @@ export const ExportOptions = ({
       <label className="form-label">Zeilen:</label>
       <input
         type="number"
-        className="form-control"
+        className="form-control" 
         value={rowCount}
-        onChange={(e) => setRowCount(parseInt(e.target.value))}
+       onChange={(e) => {
+    const value = Math.max(0, parseInt(e.target.value) || 0); // nur positive Zahlen zulassen 
+    
+      setRowCount(value);
+    }}
       />
     </div>
     {/* Auswahlfeld für das Exportformat */}
