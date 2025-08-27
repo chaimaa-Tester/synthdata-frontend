@@ -185,6 +185,7 @@ export const SynthDataWizard = () => {
           initialData={
             activeRowIdx !== null ? rows[activeRowIdx].distributionConfig : undefined
           }
+          fieldType={activeRowIdx !== null ? rows[activeRowIdx].type : ""}
         />
 
         {/* Button zum Hinzufügen einer neuen Zeile */}

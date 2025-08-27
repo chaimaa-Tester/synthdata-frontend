@@ -6,6 +6,7 @@ type DistributionModalProps = {
   onClose: () => void;
   onSave: (data: any) => void;
   initialData: any;
+  fieldType: string;
 };
 
 // Standardstruktur für die Verteilungsdaten
@@ -21,6 +22,7 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
   onClose,
   onSave,
   initialData,
+  fieldType,
 }) => {
   // Modal wird nicht gerendert, wenn es nicht sichtbar sein soll
   if (!show) return null;
@@ -78,6 +80,20 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
   const getParamLabels = (distribution: string) =>
     distributionParams[distribution] || { a: "μ:", b: "σ:" };
 
+  const getAllowedDistributions = (fieldType: string) => {
+    switch (fieldType) {
+      case "String":
+        return []; // No distributions for String
+      case "Date":
+        return ["uniform"]; // Only uniform for Date
+      case "Double":
+      case "Integer":
+        return ["normal", "uniform", "gamma"];
+      default:
+        return ["normal", "uniform", "gamma"];
+    }
+  };
+
   return (
     <div
       style={{
@@ -128,10 +144,23 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
                   extraParams: [],
                 });
               }}
+              disabled={getAllowedDistributions(fieldType).length === 0}
             >
-              <option value="normal">Normalverteilung</option>
-              <option value="uniform">Gleichverteilung</option>
-              <option value="gamma">Gammaverteilung</option>
+              {getAllowedDistributions(fieldType).length === 0 ? (
+                <option value="">Keine Verteilung verfügbar</option>
+              ) : (
+                getAllowedDistributions(fieldType).map((dist) => (
+                  <option key={dist} value={dist}>
+                    {dist === "normal"
+                      ? "Normalverteilung"
+                      : dist === "uniform"
+                      ? "Gleichverteilung"
+                      : dist === "gamma"
+                      ? "Gammaverteilung"
+                      : dist}
+                  </option>
+                ))
+              )}
             </select>
           </div>
           {/* Eingabefelder für die Hauptparameter */}
@@ -141,6 +170,10 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
               value={form.parameterA}
               onChange={(e) => setForm({ ...form, parameterA: e.target.value })}
               placeholder={getParamLabels(form.distribution).a}
+              disabled={
+                getAllowedDistributions(fieldType).length === 0 ||
+                form.distribution
+              }
             />
           </div>
           <div className="col-1">
@@ -149,6 +182,10 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
               value={form.parameterB}
               onChange={(e) => setForm({ ...form, parameterB: e.target.value })}
               placeholder={getParamLabels(form.distribution).b}
+              disabled={
+                getAllowedDistributions(fieldType).length === 0 ||
+                form.distribution
+              }
             />
           </div>
           {/* Dynamisch generierte zusätzliche Parameter */}
@@ -158,6 +195,10 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
                 className="form-control"
                 value={param}
                 onChange={(e) => handleExtraParamChange(idx, e.target.value)}
+                disabled={
+                  getAllowedDistributions(fieldType).length === 0 ||
+                  form.distribution
+                }
               />
             </div>
           ))}
@@ -172,6 +213,10 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
               }}
               onClick={handleAddExtraParam}
               title="Weiteren Parameter hinzufügen"
+              disabled={
+                getAllowedDistributions(fieldType).length === 0 ||
+                form.distribution
+              }
             >
               +
             </button>
