@@ -31,18 +31,38 @@ const defaultRow = {
   },
 };
 
+const defaultSheet = {
+  name: "Sheet1",
+  rows: [defaultRow, defaultRow, defaultRow],
+};
+
 // Hauptkomponente für den SynthData Wizard
 export const SynthDataWizard = () => {
-  // State für alle Zeilen (Felder), Exportoptionen und Modalfenster
-  const [rows, setRows] = useState([defaultRow, defaultRow, defaultRow]);
+  // NEU: State für mehrere Tabellenblätter
+  const [sheets, setSheets] = useState([defaultSheet]);
   const [rowCount, setRowCount] = useState(10);
   const [format, setFormat] = useState("CSV");
   const [lineEnding, setLineEnding] = useState("Windows(CRLF)");
   const [showModal, setShowModal] = useState(false);
   const [activeRowIdx, setActiveRowIdx] = useState<number | null>(null);
 
-  // Fügt eine neue Zeile hinzu
-  const handleAddRow = () => setRows([...rows, defaultRow]);
+  // NEU: Zeile zu einem bestimmten Tabellenblatt hinzufügen
+  const handleAddRow = (sheetIdx: number) => {
+    const newSheets = [...sheets];
+    newSheets[sheetIdx].rows.push({ ...defaultRow });
+    setSheets(newSheets);
+  };
+
+  // NEU: Tabellenblatt hinzufügen
+  const handleAddSheet = () => {
+    setSheets([
+      ...sheets,
+      {
+        name: `Sheet${sheets.length + 1}`,
+        rows: [defaultRow],
+      },
+    ]);
+  };
 
   // Aktualisiert ein Feld in einer bestimmten Zeile
   const handleRowChange = (idx: number, field: string, value: any) => {
@@ -87,19 +107,19 @@ export const SynthDataWizard = () => {
     setActiveRowIdx(null);
   };
 
-  // Exportiert die Daten als CSV-Datei über das Backend
+  // NEU: Export sendet jetzt alle Sheets ans Backend
   const handleExport = async () => {
     try {
       const response = await axios.post(
         "http://localhost:8000/api/export",
         {
-          rows,
+          sheets, // <-- mehrere Tabellenblätter
           rowCount,
           format,
           lineEnding,
         },
         {
-          responseType: "blob", // Wichtig für Datei-Download!
+          responseType: "blob",
         }
       );
 
@@ -164,23 +184,39 @@ export const SynthDataWizard = () => {
         {/* Tabellenkopf */}
         <FieldTableHeader />
 
-        {/* Sortierbare Zeilen mit Drag-and-Drop */}
-        <SortableContext
-          items={rows.map((_, idx) => idx)}
-          strategy={verticalListSortingStrategy}
-        >
-          {rows.map((row, idx) => (
-            <SortableFieldRow
-              key={idx}
-              id={idx}
-              row={row}
-              idx={idx}
-              onChange={handleRowChange}
-              onOpenModal={() => handleOpenModal(idx)}
-              handleDeleteRow={handleDeleteRow}
-            />
-          ))}
-        </SortableContext>
+        {/* NEU: Zeige alle Sheets und deren Rows... */}
+        {sheets.map((sheet, sheetIdx) => (
+          <div key={sheetIdx}>
+            <h4>{sheet.name}</h4>
+            {/* Sortierbare Zeilen mit Drag-and-Drop */}
+            <SortableContext
+              items={sheet.rows.map((_, idx) => idx)}
+              strategy={verticalListSortingStrategy}
+            >
+              {sheet.rows.map((row, idx) => (
+                <SortableFieldRow
+                  key={idx}
+                  id={idx}
+                  row={row}
+                  idx={idx}
+                  onChange={handleRowChange}
+                  onOpenModal={() => handleOpenModal(idx)}
+                  handleDeleteRow={handleDeleteRow}
+                />
+              ))}
+            </SortableContext>
+
+            {/* Button zum Hinzufügen einer neuen Zeile */}
+            <div className="mb-4 px-3">
+              <button
+                className="btn btn-outline-light"
+                onClick={() => handleAddRow(sheetIdx)}
+              >
+                + Neue Reihe in {sheet.name}
+              </button>
+            </div>
+          </div>
+        ))}
 
         {/* Modal zur Verteilungsspezifikation */}
         <DistributionModal
@@ -195,10 +231,10 @@ export const SynthDataWizard = () => {
           fieldType={activeRowIdx !== null ? rows[activeRowIdx].type : ""}
         />
 
-        {/* Button zum Hinzufügen einer neuen Zeile */}
+        {/* NEU: Button zum Hinzufügen eines neuen Tabellenblatts */}
         <div className="mb-4 px-3">
-          <button className="btn btn-outline-light" onClick={handleAddRow}>
-            + Neue Reihe
+          <button className="btn btn-outline-light" onClick={handleAddSheet}>
+            + Neues Tabellenblatt
           </button>
         </div>
 
