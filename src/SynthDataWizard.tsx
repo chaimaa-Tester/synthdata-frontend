@@ -104,11 +104,16 @@ export const SynthDataWizard = () => {
       );
 
       // Erstellt die Datei und startet den Download
-      const blob = new Blob([response.data], { type: "text/csv" });
+      const blob = new Blob([response.data], {
+        type:
+          format === "XLSX"
+            ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            : "text/csv",
+      });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "synthdata.csv";
+      link.download = format === "XLSX" ? "synthdata.xlsx" : "synthdata.csv";
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -122,7 +127,7 @@ export const SynthDataWizard = () => {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
-  
+
   // Render der Hauptoberfläche
   return (
     <DndContext
@@ -183,7 +188,9 @@ export const SynthDataWizard = () => {
           onClose={handleCloseModal}
           onSave={handleSaveDistribution}
           initialData={
-            activeRowIdx !== null ? rows[activeRowIdx].distributionConfig : undefined
+            activeRowIdx !== null
+              ? rows[activeRowIdx].distributionConfig
+              : undefined
           }
           fieldType={activeRowIdx !== null ? rows[activeRowIdx].type : ""}
         />

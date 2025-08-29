@@ -50,7 +50,7 @@ export const ExportOptions = ({
         onChange={(e) => setFormat(e.target.value)}
       >
         <option>CSV</option>
-        <option>Excel</option>
+        <option>XLSX</option>
         <option>JSON</option>
       </select>
     </div>
