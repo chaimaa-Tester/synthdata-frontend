@@ -9,13 +9,6 @@ type DistributionModalProps = {
   fieldType: string;
 };
 
-// Standardstruktur für die Verteilungsdaten
-const defaultRow = {
-  distribution: "normal", // Default-Verteilung
-  parameterA: "",
-  parameterB: "",
-};
-
 // Hauptkomponente für das Modal zur Verteilungsspezifikation
 export const DistributionModal: React.FC<DistributionModalProps> = ({
   show,
@@ -24,7 +17,6 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
   initialData,
   fieldType,
 }) => {
-  // Modal wird nicht gerendert, wenn es nicht sichtbar sein soll
   if (!show) return null;
 
   // State für die Eingabefelder im Modal
@@ -37,7 +29,7 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
     }
   );
 
-  // Synchronisiert die Form-Daten mit den Initialdaten, wenn sich die Zeile ändert
+  // Synchronisiert die Form-Daten mit den Initialdaten
   useEffect(() => {
     setForm(
       initialData || {
@@ -61,38 +53,87 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
     setForm({ ...form, extraParams: [...(form.extraParams || []), ""] });
   };
 
-  // Beispiel für weitere Optionen (z.B. Datei-Upload)
-  const [rows, setRows] = useState([defaultRow]);
-  const onChange = (idx: number, field: string, value: any) => {
-    const newRows = [...rows];
-    newRows[idx] = { ...newRows[idx], [field]: value };
-    setRows(newRows);
-  };
-
-  // Labels für die Parameter je nach gewählter Verteilung
-  const distributionParams: Record<string, { a: string; b: string }> = {
-    normal: { a: "μ", b: "σ" },
-    uniform: { a: "Min", b: "Max" },
-    gamma: { a: "μ", b: "σ" },
-  };
-
-  // Gibt die passenden Platzhalter für die Parameter zurück
-  const getParamLabels = (distribution: string) =>
-    distributionParams[distribution] || { a: "μ:", b: "σ:" };
-
+  // Verfügbare Verteilungen nach Feldtyp
   const getAllowedDistributions = (fieldType: string) => {
     switch (fieldType) {
       case "String":
-        return []; // No distributions for String
+        return ["uniform", "categorical"];
       case "Date":
-        return ["uniform"]; // Only uniform for Date
+        return ["uniform"];
       case "Double":
+        return ["normal", "uniform", "gamma", "lognormal", "exponential"];
       case "Integer":
-        return ["normal", "uniform", "gamma"];
+        return ["normal", "uniform", "gamma", "poisson"];
       default:
         return ["normal", "uniform", "gamma"];
     }
   };
+
+  // Input-Type basierend auf Feldtyp und Verteilung
+  const getInputType = () => {
+    if (fieldType === "Date") return "date";
+    if (fieldType === "Double" || fieldType === "Integer") return "number";
+    return "text";
+  };
+
+  // Platzhalter basierend auf Feldtyp und Verteilung
+  const getPlaceholder = (distribution: string, paramKey: string) => {
+    if (fieldType === "Date") return "TT.MM.JJJJ";
+    
+    if (fieldType === "Double" || fieldType === "Integer") {
+      switch (distribution) {
+        case "normal":
+          return paramKey === "a" ? "Mittelwert (μ)" : "Std.Abweichung (σ)";
+        case "uniform":
+          return paramKey === "a" ? "Minimum" : "Maximum";
+        case "gamma":
+          return paramKey === "a" ? "Shape (k)" : "Scale (θ)";
+        case "lognormal":
+          return paramKey === "a" ? "log-μ" : "log-σ";
+        case "exponential":
+          return "Rate (λ)";
+        case "poisson":
+          return "Durchschnitt (λ)";
+        default:
+          return paramKey === "a" ? "Parameter A" : "Parameter B";
+      }
+    }
+    
+    if (fieldType === "String") {
+      if (distribution === "uniform") {
+        return "Werte (mit Komma)";
+      }
+      if (distribution === "categorical") {
+        return paramKey === "a" ? "Werte (mit Komma)" : "Gewichte (mit Komma)";
+      }
+    }
+    
+    return paramKey === "a" ? "Parameter A" : "Parameter B";
+  };
+
+  // Verteilungsnamen für die Anzeige
+  const getDistributionLabel = (dist: string) => {
+    switch (dist) {
+      case "normal": return "Normalverteilung";
+      case "uniform": return "Gleichverteilung";
+      case "gamma": return "Gammaverteilung";
+      case "lognormal": return "Log-Normalverteilung";
+      case "exponential": return "Exponentialverteilung";
+      case "poisson": return "Poisson-Verteilung";
+      case "categorical": return "Kategoriale Verteilung";
+      default: return dist;
+    }
+  };
+
+  // Soll Parameter B angezeigt werden?
+  const shouldShowParameterB = (distribution: string) => {
+    if (fieldType === "String" && distribution === "uniform") return false;
+    if (distribution === "exponential") return false;
+    if (distribution === "poisson") return false;
+    return true;
+  };
+
+  const allowedDistributions = getAllowedDistributions(fieldType);
 
   return (
     <div
@@ -115,22 +156,25 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
           color: "black",
           padding: 30,
           borderRadius: 10,
-          minWidth: 1200,
+          minWidth: 800,
+          maxWidth: "90vw",
         }}
       >
         {/* Titel des Modals */}
-        <div className="d-flex align-items-start">
-          <h3>Verteilung spezifizieren</h3>
+        <div className="d-flex align-items-start mb-4">
+          <h3>Verteilung spezifizieren für {fieldType}</h3>
         </div>
 
         {/* Option 1: Verteilung und Parameter */}
-        <div className="row mb-2 fw-bold flex-nowrap">
-          <div className="col-md-2">Option 1:</div>
+        <div className="row mb-3">
+          <div className="col-12">
+            <h5 className="fw-bold">Option 1:</h5>
+          </div>
         </div>
 
-        <div className="row mb-2 align-items-center">
+        <div className="row mb-4 align-items-center">
           {/* Auswahl der Verteilung */}
-          <div className="col-3">
+          <div className="col-4">
             <select
               className="form-select"
               value={form.distribution}
@@ -144,67 +188,59 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
                   extraParams: [],
                 });
               }}
-              disabled={getAllowedDistributions(fieldType).length === 0}
+              disabled={allowedDistributions.length === 0}
             >
-              {getAllowedDistributions(fieldType).length === 0 ? (
-                <option value="">Keine Verteilung verfügbar</option>
-              ) : (
-                getAllowedDistributions(fieldType).map((dist) => (
-                  <option key={dist} value={dist}>
-                    {dist === "normal"
-                      ? "Normalverteilung"
-                      : dist === "uniform"
-                      ? "Gleichverteilung"
-                      : dist === "gamma"
-                      ? "Gammaverteilung"
-                      : dist}
-                  </option>
-                ))
-              )}
+              <option value="">Verteilung wählen</option>
+              {allowedDistributions.map((dist) => (
+                <option key={dist} value={dist}>
+                  {getDistributionLabel(dist)}
+                </option>
+              ))}
             </select>
           </div>
+
           {/* Eingabefelder für die Hauptparameter */}
-          <div className="col-1">
-            <input
-              className="form-control"
-              type="date"
-              value={form.parameterA}
-              onChange={(e) => setForm({ ...form, parameterA: e.target.value })}
-              placeholder={getParamLabels(form.distribution).a}
-              disabled={
-                getAllowedDistributions(fieldType).length === 0 ||
-                form.distribution
-              }
-              style={{ width: "auto" }}
-            />
-          </div>
-          <div className="col-1 ms-5">
-            <input
-              className="form-control"
-              type="date"
-              value={form.parameterB}
-              onChange={(e) => setForm({ ...form, parameterB: e.target.value })}
-              placeholder={getParamLabels(form.distribution).b}
-              disabled={
-                getAllowedDistributions(fieldType).length === 0 ||
-                form.distribution
-              }
-              style={{ width: "auto" }}
-            />
-          </div>
+          {form.distribution && (
+            <>
+              <div className="col-3 ms-2">
+                <input
+                  className="form-control"
+                  type={getInputType()}
+                  value={form.parameterA}
+                  onChange={(e) => setForm({ ...form, parameterA: e.target.value })}
+                  placeholder={getPlaceholder(form.distribution, "a")}
+                  step={(fieldType === "Double") ? "0.01" : "1"}
+                  style={{ minWidth: "200px" }}
+                />
+              </div>
+              
+              {/* Parameter B nur anzeigen wenn benötigt */}
+              {shouldShowParameterB(form.distribution) && (
+                <div className="col-3 ms-2">
+                  <input
+                    className="form-control"
+                    type={getInputType()}
+                    value={form.parameterB}
+                    onChange={(e) => setForm({ ...form, parameterB: e.target.value })}
+                    placeholder={getPlaceholder(form.distribution, "b")}
+                    step={(fieldType === "Double") ? "0.01" : "1"}
+                    style={{ minWidth: "200px" }}
+                  />
+                </div>
+              )}
+            </>
+          )}
+
           {/* Dynamisch generierte zusätzliche Parameter */}
           {(form.extraParams || []).map((param: any, idx: any) => (
-            <div className="col-1 d-flex align-items-center ms-5" key={idx}>
+            <div className="col-3 d-flex align-items-center ms-2" key={idx}>
               <input
                 className="form-control"
-                type="date"
+                type="text"
                 value={param}
                 onChange={(e) => handleExtraParamChange(idx, e.target.value)}
-                disabled={
-                  getAllowedDistributions(fieldType).length === 0 ||
-                  form.distribution
-                }
-                style={{width: "auto"}}
+                placeholder={`Zusatzparameter ${idx + 1}`}
+                style={{ minWidth: "150px" }}
               />
               <button
                 className="btn ms-1"
@@ -212,8 +248,8 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
                   backgroundColor: "rgb(115, 67, 131)",
                   color: "white",
                   fontSize: 20,
-                  width: "24px",
-                  height: "24px",
+                  width: "30px",
+                  height: "30px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -232,54 +268,62 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
           ))}
 
           {/* Button zum Hinzufügen eines weiteren Parameters */}
-          <div className="col-1 ms-5">
-            <button
-              className="btn"
-              style={{
-                backgroundColor: "rgb(115, 67, 131)",
-                color: "white",
-                fontSize: 20,
-              }}
-              onClick={handleAddExtraParam}
-              title="Weiteren Parameter hinzufügen"
-              disabled={
-                getAllowedDistributions(fieldType).length === 0 ||
-                form.distribution
-              }
-            >
-              +
-            </button>
-          </div>
-        </div>
-
-        {/* Option 2: Beispiel für weitere Aktionen, z.B. Datei-Upload */}
-        <div className="row mb-2 fw-bold flex-nowrap">
-          <div className="col-md-2">Option 2:</div>
-        </div>
-
-        {rows.map((row, idx) => (
-          <div className="row mb-2 align-items-center" key={idx}>
-            <div className="col-3">
+          {form.distribution && (
+            <div className="col-1 ms-2">
               <button
-                className="btn me-3"
+                className="btn"
                 style={{
                   backgroundColor: "rgb(115, 67, 131)",
                   color: "white",
                   fontSize: 20,
+                  width: "30px",
+                  height: "30px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
+                onClick={handleAddExtraParam}
+                title="Weiteren Parameter hinzufügen"
               >
-                Datei hochladen
+                +
               </button>
             </div>
+          )}
+        </div>
+
+        {/* Option 2: Datei-Upload */}
+        <div className="row mb-3">
+          <div className="col-12">
+            <h5 className="fw-bold">Option 2:</h5>
           </div>
-        ))}
+        </div>
+
+        <div className="row mb-4">
+          <div className="col-4">
+            <button
+              className="btn w-100"
+              style={{
+                backgroundColor: "rgb(115, 67, 131)",
+                color: "white",
+                padding: "10px",
+                fontSize: "16px",
+              }}
+            >
+              Datei hochladen
+            </button>
+          </div>
+        </div>
 
         {/* Buttons zum Speichern oder Schließen des Modals */}
-        <div className="text-center">
-          <button className="me-1 btn btn-success" onClick={() => onSave(form)}>
+        <div className="text-center mt-4">
+          <button 
+            className="me-3 btn btn-success px-4 py-2" 
+            onClick={() => onSave(form)}
+            disabled={!form.distribution}
+          >
             Speichern
           </button>
-          <button className="btn btn-secondary" onClick={onClose}>
+          <button className="btn btn-secondary px-4 py-2" onClick={onClose}>
             Schließen
           </button>
         </div>
