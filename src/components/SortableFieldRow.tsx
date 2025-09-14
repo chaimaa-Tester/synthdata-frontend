@@ -1,3 +1,4 @@
+import React from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { FieldRow } from "./FieldRow";
@@ -5,34 +6,30 @@ import { FieldRow } from "./FieldRow";
 /**
  * SortableFieldRow ist ein Wrapper für FieldRow, der die Drag-and-Drop-Funktionalität
  * von dnd-kit bereitstellt. Jede Zeile kann damit per Griff verschoben werden.
- * Die Komponente erhält alle Props von FieldRow und ergänzt sie um die notwendigen
- * Eigenschaften für das Sortieren.
+ *
+ * Hinweis zu Option A (Auto-Vervollständigung):
+ * Die <datalist id="fieldname-options"> wird global in SynthDataWizard gerendert.
+ * In FieldRow sollte das Abhängigkeits-Input einfach das Attribut list="fieldname-options" haben.
  */
-export const SortableFieldRow = (props: any) => {
-  // useSortable stellt alle nötigen Handler und Styles für Drag-and-Drop bereit
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
+
+type SortableFieldRowProps = any; // Wenn du FieldRow-Props typisieren willst:
+                                  // type SortableFieldRowProps = React.ComponentProps<typeof FieldRow> & { id: string | number };
+
+export const SortableFieldRow: React.FC<SortableFieldRowProps> = (props) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({
+      id: props.id, // Eindeutige ID für jede Zeile
+    });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
     transition,
-    isDragging,
-  } = useSortable({
-    id: props.id, // Eindeutige ID für jede Zeile
-  });
+    opacity: isDragging ? 0.5 : 1,
+  };
 
   return (
-    <div
-      ref={setNodeRef} // Referenz für dnd-kit, damit die Zeile verschiebbar ist
-      style={{
-        // Visuelle Animation und Transparenz beim Ziehen
-        transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0.5 : 1,
-      }}
-      {...attributes} // Zusätzliche Attribute für Barrierefreiheit und dnd-kit
-    >
-      {/* Übergibt die Drag-and-Drop-Listener als dragHandleProps an FieldRow */}
+    <div ref={setNodeRef} style={style} {...attributes}>
+      {/* Drag-Listener als dragHandleProps an FieldRow weiterreichen */}
       <FieldRow {...props} dragHandleProps={listeners} />
     </div>
   );

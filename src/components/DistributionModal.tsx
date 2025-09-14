@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 
-// Props für das Modal: Sichtbarkeit, Callback zum Schließen/Speichern und Initialdaten
+// Props für das Modal
 type DistributionModalProps = {
   show: boolean;
   onClose: () => void;
   onSave: (data: any) => void;
   initialData: any;
   fieldType: string;
+  allFieldNames?: string[]; // ✅ hinzugefügt (optional)
 };
 
 // Hauptkomponente für das Modal zur Verteilungsspezifikation
@@ -16,6 +17,7 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
   onSave,
   initialData,
   fieldType,
+  //allFieldNames, // optional; wird aktuell nicht verwendet
 }) => {
   if (!show) return null;
 
@@ -25,7 +27,7 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
       distribution: "",
       parameterA: "",
       parameterB: "",
-      extraParams: [],
+      extraParams: [] as string[],
     }
   );
 
@@ -36,7 +38,7 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
         distribution: "",
         parameterA: "",
         parameterB: "",
-        extraParams: [],
+        extraParams: [] as string[],
       }
     );
   }, [initialData]);
@@ -54,8 +56,8 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
   };
 
   // Verfügbare Verteilungen nach Feldtyp
-  const getAllowedDistributions = (fieldType: string) => {
-    switch (fieldType) {
+  const getAllowedDistributions = (type: string) => {
+    switch (type) {
       case "String":
         return ["uniform", "categorical"];
       case "Date":
@@ -63,24 +65,25 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
       case "Double":
         return ["normal", "uniform", "gamma", "lognormal", "exponential"];
       case "Integer":
-        return ["normal", "uniform", "gamma", "poisson"];
+        return ["uniform", "normal", "binomial", "poisson"];
       default:
         return ["normal", "uniform", "gamma"];
     }
   };
 
-  // Input-Type basierend auf Feldtyp und Verteilung
+  // Input-Type
   const getInputType = () => {
     if (fieldType === "Date") return "date";
-    if (fieldType === "Double" || fieldType === "Integer") return "number";
+    if (fieldType === "Double") return "number";
+    if (fieldType === "Integer") return "number";
     return "text";
   };
 
-  // Platzhalter basierend auf Feldtyp und Verteilung
+  // Platzhalter
   const getPlaceholder = (distribution: string, paramKey: string) => {
     if (fieldType === "Date") return "TT.MM.JJJJ";
-    
-    if (fieldType === "Double" || fieldType === "Integer") {
+
+    if (fieldType === "Double") {
       switch (distribution) {
         case "normal":
           return paramKey === "a" ? "Mittelwert (μ)" : "Std.Abweichung (σ)";
@@ -92,22 +95,32 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
           return paramKey === "a" ? "log-μ" : "log-σ";
         case "exponential":
           return "Rate (λ)";
-        case "poisson":
-          return "Durchschnitt (λ)";
         default:
           return paramKey === "a" ? "Parameter A" : "Parameter B";
       }
     }
-    
-    if (fieldType === "String") {
-      if (distribution === "uniform") {
-        return "Werte (mit Komma)";
-      }
-      if (distribution === "categorical") {
-        return paramKey === "a" ? "Werte (mit Komma)" : "Gewichte (mit Komma)";
+
+    if (fieldType === "Integer") {
+      switch (distribution) {
+        case "normal":
+          return paramKey === "a" ? "Mittelwert (μ)" : "Std.Abweichung (σ)";
+        case "uniform":
+          return paramKey === "a" ? "Minimum" : "Maximum";
+        case "binomial":
+          return paramKey === "a" ? "Anzahl Versuche (n)" : "Erfolgswahrscheinlichkeit (p)";
+        case "poisson":
+          return "Rate (λ)";
+        default:
+          return paramKey === "a" ? "Parameter A" : "Parameter B";
       }
     }
-    
+
+    if (fieldType === "String") {
+      if (distribution === "uniform") return "Werte (mit Komma)";
+      if (distribution === "categorical")
+        return paramKey === "a" ? "Werte (mit Komma)" : "Gewichte (mit Komma)";
+    }
+
     return paramKey === "a" ? "Parameter A" : "Parameter B";
   };
 
@@ -119,8 +132,9 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
       case "gamma": return "Gammaverteilung";
       case "lognormal": return "Log-Normalverteilung";
       case "exponential": return "Exponentialverteilung";
-      case "poisson": return "Poisson-Verteilung";
       case "categorical": return "Kategoriale Verteilung";
+      case "binomial": return "Binomialverteilung";
+      case "poisson": return "Poissonverteilung";
       default: return dist;
     }
   };
@@ -129,8 +143,15 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
   const shouldShowParameterB = (distribution: string) => {
     if (fieldType === "String" && distribution === "uniform") return false;
     if (distribution === "exponential") return false;
-    if (distribution === "poisson") return false;
+    if (fieldType === "Integer" && distribution === "poisson") return false;
     return true;
+  };
+
+  // Schrittweite
+  const getStepValue = () => {
+    if (fieldType === "Double") return "0.01";
+    if (fieldType === "Integer") return "1";
+    return undefined;
   };
 
   const allowedDistributions = getAllowedDistributions(fieldType);
@@ -160,12 +181,12 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
           maxWidth: "90vw",
         }}
       >
-        {/* Titel des Modals */}
+        {/* Titel */}
         <div className="d-flex align-items-start mb-4">
           <h3>Verteilung spezifizieren für {fieldType}</h3>
         </div>
 
-        {/* Option 1: Verteilung und Parameter */}
+        {/* Option 1 */}
         <div className="row mb-3">
           <div className="col-12">
             <h5 className="fw-bold">Option 1:</h5>
@@ -199,7 +220,7 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
             </select>
           </div>
 
-          {/* Eingabefelder für die Hauptparameter */}
+          {/* Hauptparameter */}
           {form.distribution && (
             <>
               <div className="col-3 ms-2">
@@ -209,12 +230,11 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
                   value={form.parameterA}
                   onChange={(e) => setForm({ ...form, parameterA: e.target.value })}
                   placeholder={getPlaceholder(form.distribution, "a")}
-                  step={(fieldType === "Double") ? "0.01" : "1"}
+                  step={getStepValue()}
                   style={{ minWidth: "200px" }}
                 />
               </div>
-              
-              {/* Parameter B nur anzeigen wenn benötigt */}
+
               {shouldShowParameterB(form.distribution) && (
                 <div className="col-3 ms-2">
                   <input
@@ -223,7 +243,7 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
                     value={form.parameterB}
                     onChange={(e) => setForm({ ...form, parameterB: e.target.value })}
                     placeholder={getPlaceholder(form.distribution, "b")}
-                    step={(fieldType === "Double") ? "0.01" : "1"}
+                    step={getStepValue()}
                     style={{ minWidth: "200px" }}
                   />
                 </div>
@@ -231,7 +251,7 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
             </>
           )}
 
-          {/* Dynamisch generierte zusätzliche Parameter */}
+          {/* Dynamische Zusatzparameter */}
           {(form.extraParams || []).map((param: any, idx: any) => (
             <div className="col-3 d-flex align-items-center ms-2" key={idx}>
               <input
@@ -267,7 +287,7 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
             </div>
           ))}
 
-          {/* Button zum Hinzufügen eines weiteren Parameters */}
+          {/* Weiteren Parameter hinzufügen */}
           {form.distribution && (
             <div className="col-1 ms-2">
               <button
@@ -314,10 +334,10 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
           </div>
         </div>
 
-        {/* Buttons zum Speichern oder Schließen des Modals */}
+        {/* Aktionen */}
         <div className="text-center mt-4">
-          <button 
-            className="me-3 btn btn-success px-4 py-2" 
+          <button
+            className="me-3 btn btn-success px-4 py-2"
             onClick={() => onSave(form)}
             disabled={!form.distribution}
           >
