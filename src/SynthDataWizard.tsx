@@ -27,7 +27,7 @@ import {
 export type Row = {
   id: string; // <-- NEU: eindeutige id für Drag & Drop
   name: string;
-  type: "String" | "Double" | "Date" | "Integer";
+  type: "name" | "körpergröße" | "Date" | "Integer" | "alter" | "geschlecht";
   dependency: string;
   distributionConfig: {
     distribution: string;
@@ -41,7 +41,7 @@ export type Row = {
 const makeDefaultRow = (): Row => ({
   id: `${Date.now()}-${Math.random()}`, // <-- NEU: einfache eindeutige id
   name: "",
-  type: "String",
+  type: "name",
   dependency: "",
   distributionConfig: {
     distribution: "",

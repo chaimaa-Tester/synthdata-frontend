@@ -103,8 +103,10 @@ export const FieldRow = ({
           value={row.type}
           onChange={(e) => onChange(idx, "type", e.target.value)}
         >
-          <option value="String">String</option>
-          <option value="Double">Double</option>
+          <option value="name">Name</option>
+          <option value="körpergröße">Körpergröße</option>
+          <option value="alter">Alter</option>
+          <option value="geschlecht">Geschlecht</option>
           <option value="Date">Date</option>
           <option value="Integer">Integer</option>
         </select>

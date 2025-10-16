@@ -203,14 +203,18 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
   // Verfügbare Verteilungen nach Feldtyp
   const getAllowedDistributions = (type: string) => {
     switch (type) {
-      case "String":
-        return ["uniform", "categorical"];
+      case "name":
+        return ["categorical"];
       case "Date":
         return ["uniform"];
-      case "Double":
-        return ["normal", "uniform", "gamma", "lognormal", "exponential"];
+      case "körpergröße":
+        return ["uniform"];
       case "Integer":
         return ["uniform", "normal", "binomial", "poisson"];
+      case "alter":
+        return ["uniform", "normal", "binomial", "poisson"];
+      case "geschlecht":
+        return ["categorical"];
       default:
         return ["normal", "uniform", "gamma"];
     }
@@ -219,8 +223,7 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
   // Input-Type
   const getInputType = () => {
     if (fieldType === "Date") return "date";
-    if (fieldType === "Double") return "number";
-    if (fieldType === "Integer") return "number";
+    if (fieldType === "Integer" || "körpergröße" || "alter") return "number";
     return "text";
   };
 
@@ -228,40 +231,16 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
   const getPlaceholder = (distribution: string, paramKey: string) => {
     if (fieldType === "Date") return "TT.MM.JJJJ";
 
-    if (fieldType === "Double" || fieldType === "Integer") {
+    if (fieldType === "körpergröße" || fieldType === "Integer" || fieldType === "alter") {
       switch (distribution) {
-        case "normal":
-          return paramKey === "a" ? "Mittelwert (μ)" : "Std.Abweichung (σ)";
         case "uniform":
           return paramKey === "a" ? "Minimum" : "Maximum";
-        case "gamma":
-          return paramKey === "a" ? "Shape (k)" : "Scale (θ)";
-        case "lognormal":
-          return paramKey === "a" ? "log-μ" : "log-σ";
-        case "exponential":
-          return "Rate (λ)";
         default:
           return paramKey === "a" ? "Parameter A" : "Parameter B";
       }
     }
 
-    if (fieldType === "Integer") {
-      switch (distribution) {
-        case "normal":
-          return paramKey === "a" ? "Mittelwert (μ)" : "Std.Abweichung (σ)";
-        case "uniform":
-          return paramKey === "a" ? "Minimum" : "Maximum";
-        case "binomial":
-          return paramKey === "a" ? "Anzahl Versuche (n)" : "Erfolgswahrscheinlichkeit (p)";
-        case "poisson":
-          return "Rate (λ)";
-        default:
-          return paramKey === "a" ? "Parameter A" : "Parameter B";
-      }
-    }
-
-    if (fieldType === "String") {
-      if (distribution === "uniform") return "Werte (mit Komma)";
+    if (fieldType === "name") {
       if (distribution === "categorical")
         return paramKey === "a" ? "Werte (mit Komma)" : "Gewichte (mit Komma)";
     }
@@ -293,7 +272,6 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
 
   // Soll Parameter B angezeigt werden?
   const shouldShowParameterB = (distribution: string) => {
-    if (fieldType === "String" && distribution === "uniform") return false;
     if (distribution === "exponential") return false;
     if (fieldType === "Integer" && distribution === "poisson") return false;
     return true;
@@ -301,8 +279,8 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
 
   // Schrittweite
   const getStepValue = () => {
-    if (fieldType === "Double") return "0.01";
-    if (fieldType === "Integer") return "1";
+    if (fieldType === "körpergröße") return "0.01";
+    if (fieldType === "Integer" || fieldType === "alter") return "1";
     return undefined;
   };
 
