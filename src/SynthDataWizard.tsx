@@ -2,26 +2,44 @@ import { useMemo, useState } from "react";
 import axios from "axios";
 import logo from "./assets/logo.png";
 import { DistributionModal } from "./components/DistributionModal";
-import { FieldRow } from "./components/FieldRow"; // ÄNDERUNG: FieldRow statt SortableFieldRow
+// import FieldRow from sortable wrapper statt direkter FieldRow
+import { SortableFieldRow } from "./components/SortableFieldRow"; // <-- GEÄNDERT: Sortable wrapper import
 import { FieldTableHeader } from "./components/FieldTableHeader";
 import { ExportOptions } from "./components/ExportOptions";
+
+// NEU: dnd-kit imports
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
 
 // -------------------- Typen & Helpers --------------------
 
 export type Row = {
+  id: string; // <-- NEU: eindeutige id für Drag & Drop
   name: string;
   type: "String" | "Double" | "Date" | "Integer";
   dependency: string;
-  distributionConfig: { // Klammern korrigiert
+  distributionConfig: {
     distribution: string;
-    parameterA: string; // parameterA nicht parameters
-    parameterB: string; // parameterB nicht parameters  
-    extraParams: string[]; // extraParams nicht extraterrans
+    parameterA: string;
+    parameterB: string;
+    extraParams: string[];
     dependency: string;
   };
 };
 
 const makeDefaultRow = (): Row => ({
+  id: `${Date.now()}-${Math.random()}`, // <-- NEU: einfache eindeutige id
   name: "",
   type: "String",
   dependency: "",
@@ -48,6 +66,20 @@ export const SynthDataWizard = () => {
   const [lineEnding, setLineEnding] = useState<string>("Windows(CRLF)");
   const [showModal, setShowModal] = useState<boolean>(false);
   const [activeRowIdx, setActiveRowIdx] = useState<number | null>(null);
+  const sensors = useSensors(useSensor(PointerSensor));
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    setRows((prev) => {
+      const oldIndex = prev.findIndex((r) => r.id === active.id);
+      const newIndex = prev.findIndex((r) => r.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return prev;
+      return arrayMove(prev, oldIndex, newIndex);
+    });
+  };
+  
 
   const handleAddRow = () =>
     setRows((prev) => [...prev, makeDefaultRow()]);
@@ -142,18 +174,27 @@ export const SynthDataWizard = () => {
 
       <FieldTableHeader />
 
-      {/* WICHTIGE ÄNDERUNG: FieldRow statt SortableFieldRow */}
-      {rows.map((row, idx) => (
-        <FieldRow
-          key={idx}
-          row={row}
-          idx={idx}
-          onChange={handleRowChange}
-          onOpenModal={() => handleOpenModal(idx)}
-          handleDeleteRow={handleDeleteRow}
-          allFieldNames={allFieldNames} // Hier werden die Feldnamen übergeben
-        />
-      ))}
+      {/* NEU: DnD-Wrapper + SortableContext */}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={rows.map((r) => r.id)} strategy={verticalListSortingStrategy}>
+          {rows.map((row, idx) => (
+            <SortableFieldRow
+              key={row.id}
+              id={row.id} // wichtig für dnd-kit
+              row={row}
+              idx={idx}
+              onChange={handleRowChange}
+              onOpenModal={() => handleOpenModal(idx)}
+              handleDeleteRow={handleDeleteRow}
+              allFieldNames={allFieldNames}
+            />
+          ))}
+        </SortableContext>
+      </DndContext>
 
       {/* Modal */}
       {activeRowIdx !== null && (

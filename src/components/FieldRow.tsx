@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export const FieldRow = ({
   row,
@@ -7,6 +7,7 @@ export const FieldRow = ({
   onOpenModal,
   handleDeleteRow,
   allFieldNames,
+  dragHandleProps,
 }: {
   row: any;
   idx: number;
@@ -14,6 +15,7 @@ export const FieldRow = ({
   onOpenModal: (idx: number) => void;
   handleDeleteRow: (idx: number) => void;
   allFieldNames: string[];
+  dragHandleProps?: any;
 }) => {
   const parseDeps = (text: string): string[] =>
     (text || "")
@@ -70,11 +72,18 @@ export const FieldRow = ({
     <div
       className="row mb-2 align-items-center flex-nowrap"
       style={{ minWidth: 1200 }}
-      key={idx}
     >
       {/* Platzhalter für Draghandle */}
-      <div className="col-auto d-flex align-items-center px-0">
-        <span style={{ fontSize: 20, opacity: 0 }}>☰</span>
+      <div className="col-auto d-flex align-items-center px-0"
+      {...(dragHandleProps || {})}
+      style={{
+        cursor: "grab",
+        userSelect: "none",
+        padding: "6px 8px"}}
+      role="button"
+      aria-label="Drag Handle"
+      onMouseDown={(e) => e.preventDefault()}>
+        <span style={{ fontSize: 20, opacity: 0.8 }}>☰</span>
       </div>
 
       {/* Feldname */}
