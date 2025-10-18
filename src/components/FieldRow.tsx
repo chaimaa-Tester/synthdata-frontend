@@ -109,12 +109,13 @@ export const FieldRow = ({
           <option value="geschlecht">Geschlecht</option>
           <option value="Date">Date</option>
           <option value="Integer">Integer</option>
+          <option value="Float">Float</option>
         </select>
       </div>
 
       {/* Abhängigkeit Dropdown */}
       <div
-        className="col"
+        className="col-2"
         ref={rootRef}
         style={{ position: "relative", minWidth: 240 }}
       >
