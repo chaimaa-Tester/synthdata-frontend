@@ -6,6 +6,7 @@ import { DistributionModal } from "./components/DistributionModal";
 import { SortableFieldRow } from "./components/SortableFieldRow"; // <-- GEÄNDERT: Sortable wrapper import
 import { FieldTableHeader } from "./components/FieldTableHeader";
 import { ExportOptions } from "./components/ExportOptions";
+import { CustomDistributionCanvas } from "./components/CustomDistributionCanvas";
 
 // NEU: dnd-kit imports
 import {
@@ -61,11 +62,29 @@ export const SynthDataWizard = () => {
     makeDefaultRow(),
   ]);
 
+  // States
   const [rowCount, setRowCount] = useState<number>(10);
   const [format, setFormat] = useState<string>("CSV");
   const [lineEnding, setLineEnding] = useState<string>("Windows(CRLF)");
   const [showModal, setShowModal] = useState<boolean>(false);
   const [activeRowIdx, setActiveRowIdx] = useState<number | null>(null);
+  // State for custom draw modal
+  const [showCustomDraw, setShowCustomDraw] = useState<boolean>(false);
+  const [activeFieldIndex, setActiveFieldIndex] = useState<number | null>(null);
+  // Handler for opening custom draw modal
+  const handleCustomDraw = (idx: number) => {
+    setActiveFieldIndex(idx);
+    setShowCustomDraw(true);
+  };
+
+  // Handler for saving from custom draw modal
+  const handleCustomDrawSave = (data: any) => {
+    // Log the data
+    console.log("Custom distribution saved:", data);
+    setShowCustomDraw(false);
+    setActiveFieldIndex(null);
+  };
+
   const sensors = useSensors(useSensor(PointerSensor));
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -191,6 +210,7 @@ export const SynthDataWizard = () => {
               onOpenModal={() => handleOpenModal(idx)}
               handleDeleteRow={handleDeleteRow}
               allFieldNames={allFieldNames}
+              onCustomDraw={() => handleCustomDraw(idx)}
             />
           ))}
         </SortableContext>
@@ -235,6 +255,49 @@ export const SynthDataWizard = () => {
           Exportieren
         </button>
       </div>
+      {/* Custom Distribution Modal */}
+      {showCustomDraw && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(0,0,0,0.6)",
+            zIndex: 2000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            style={{
+              background: "#22304f",
+              padding: "32px 24px",
+              borderRadius: "16px",
+              minWidth: 350,
+              boxShadow: "0 8px 32px rgba(0,0,0,0.25)"
+            }}
+          >
+            <CustomDistributionCanvas
+              onSave={handleCustomDrawSave}
+              // Weitere relevante Props je nach Bedarf
+            />
+            <div style={{ marginTop: 16, textAlign: "right" }}>
+              <button
+                className="btn btn-outline-light"
+                onClick={() => {
+                  setShowCustomDraw(false);
+                  setActiveFieldIndex(null);
+                }}
+              >
+                Abbrechen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

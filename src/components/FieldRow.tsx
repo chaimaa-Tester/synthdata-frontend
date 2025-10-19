@@ -5,6 +5,7 @@ export const FieldRow = ({
   idx,
   onChange,
   onOpenModal,
+  onCustomDraw,
   handleDeleteRow,
   allFieldNames,
   dragHandleProps,
@@ -13,6 +14,7 @@ export const FieldRow = ({
   idx: number;
   onChange: (idx: number, field: string, value: any) => void;
   onOpenModal: (idx: number) => void;
+  onCustomDraw: (idx: number) => void;
   handleDeleteRow: (idx: number) => void;
   allFieldNames: string[];
   dragHandleProps?: any;
@@ -222,12 +224,27 @@ export const FieldRow = ({
         >
           Verteilung spezifizieren
         </button>
+        <button
+          type="button"
+          style={{
+            backgroundColor: "#4b0082",
+            color: "white",
+            marginLeft: "8px",
+            padding: "6px 12px",
+            borderRadius: "6px",
+            border: "none",
+            cursor: "pointer",
+          }}
+          onClick={() => onCustomDraw(idx)}
+        >
+          🎨 Eigene Verteilung zeichnen
+        </button>
       <div className="col-auto d-flex align-items-center"></div>
         <button
           type="button"
           className="btn"
           aria-label="Delete"
-          style={{ padding: 0, background: "none", border: "none" }}
+          style={{ padding: 0, background: "none", border: "none", marginRight: "50px" }}
           onClick={() => handleDeleteRow(idx)}
           title="Zeile löschen"
         >
