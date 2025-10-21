@@ -28,7 +28,8 @@ type DistributionModalProps = {
   onSave: (data: any) => void;
   initialData: any;
   fieldType: string;
-  allFieldNames?: string[]; // ✅ hinzugefügt (optional)
+  allFieldNames?: string[];
+  nationality?: string; // Neu: Nationalität für Namensgenerierung
 };
 
 // Hilfsfunktion zum Berechnen der Fit-Kurve Y-Werte
@@ -38,25 +39,15 @@ const calculateFitCurve = (
   bins: number[],
   totalCount: number
 ) => {
-  // Verteilungen: norm, expon, gamma, lognorm, uniform
-  // params: je nach Verteilung unterschiedlich
-  // totalCount: Gesamtanzahl der Werte (für Skalierung)
-
-  // Für jede Verteilung müssen wir die PDF berechnen
-  // Wir approximieren hier nur die gängigen Verteilungen mit einfachen Formeln
-
   const pdfs: number[] = [];
-
   const step = bins[1] - bins[0];
 
   for (let i = 0; i < bins.length; i++) {
     const x = bins[i] + step / 2;
-
     let y = 0;
 
     switch (distribution) {
       case "norm": {
-        // params: [mean, std]
         const mean = parseFloat(params[0]);
         const std = parseFloat(params[1]);
         if (std <= 0) {
@@ -69,7 +60,6 @@ const calculateFitCurve = (
         break;
       }
       case "expon": {
-        // params: [scale] (mean)
         const scale = parseFloat(params[0]);
         if (scale <= 0 || x < 0) {
           y = 0;
@@ -79,34 +69,27 @@ const calculateFitCurve = (
         break;
       }
       case "gamma": {
-        // params: [shape, scale]
         const shape = parseFloat(params[0]);
         const scale = parseFloat(params[1]);
         if (shape <= 0 || scale <= 0 || x < 0) {
           y = 0;
           break;
         }
-        // Gamma PDF: x^(k-1) * exp(-x/θ) / (Γ(k) * θ^k)
-        // Approximate Γ(k) with gamma function approximation or use 1 for simplicity
-        // For simplicity, we use a rough approximation for Γ(k)
         const gamma = (z: number): number => {
-          // Lanczos approximation or simple factorial for integers
           if (z === 1) return 1;
           if (z === 0.5) return Math.sqrt(Math.PI);
-          // fallback: factorial for integers
           if (Number.isInteger(z)) {
             let f = 1;
             for (let i = 1; i < z; i++) f *= i;
             return f;
           }
-          return 1; // fallback
+          return 1;
         };
         const gammaVal = gamma(shape);
         y = (Math.pow(x, shape - 1) * Math.exp(-x / scale)) / (gammaVal * Math.pow(scale, shape));
         break;
       }
       case "lognorm": {
-        // params: [meanlog, stdlog]
         const meanlog = parseFloat(params[0]);
         const stdlog = parseFloat(params[1]);
         if (stdlog <= 0 || x <= 0) {
@@ -119,7 +102,6 @@ const calculateFitCurve = (
         break;
       }
       case "uniform": {
-        // params: [min, max]
         const min = parseFloat(params[0]);
         const max = parseFloat(params[1]);
         if (max <= min) {
@@ -133,9 +115,7 @@ const calculateFitCurve = (
         y = 0;
     }
 
-    // Skalieren PDF auf Histogramm Höhe (Anzahl * Breite des Bin)
     y = y * totalCount * step;
-
     pdfs.push(y);
   }
 
@@ -149,7 +129,7 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
   onSave,
   initialData,
   fieldType,
-  //allFieldNames, // optional; wird aktuell nicht verwendet
+  nationality = "german", // ✅ Default auf Deutsch
 }) => {
   if (!show) return null;
 
@@ -160,6 +140,7 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
       parameterA: "",
       parameterB: "",
       extraParams: [] as string[],
+      nationality: nationality, // ✅ Nationalität im Form-State
     }
   );
 
@@ -172,7 +153,6 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
     parameters: any[];
     values: number[];
     p_value: number;
-    // allow legacy for robustness
     distribution?: string;
   } | null>(null);
 
@@ -184,9 +164,10 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
         parameterA: "",
         parameterB: "",
         extraParams: [] as string[],
+        nationality: nationality, // ✅ Nationalität übernehmen
       }
     );
-  }, [initialData]);
+  }, [initialData, nationality]); // ✅ nationality als Dependency
 
   // Handler zum Ändern eines zusätzlichen Parameters
   const handleExtraParamChange = (idx: number, value: string) => {
@@ -200,47 +181,70 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
     setForm({ ...form, extraParams: [...(form.extraParams || []), ""] });
   };
 
-  // Verfügbare Verteilungen nach Feldtyp
+  // ✅ NEU: Verfügbare Verteilungen erweitert für mimesis-Typen
   const getAllowedDistributions = (type: string) => {
     switch (type) {
       case "name":
+      case "vorname":
+      case "nachname":
+      case "vollständigername":
+        return ["categorical"];
+      case "geschlecht":
+      case "gender":
         return ["categorical"];
       case "Date":
+      case "date":
         return ["uniform"];
       case "körpergröße":
-        return ["uniform"];
+      case "gewicht":
+      case "float":
+        return ["uniform", "normal"];
       case "Integer":
-        return ["uniform", "normal", "binomial", "poisson"];
+      case "integer":
       case "alter":
-        return ["uniform", "normal", "binomial", "poisson"];
-      case "geschlecht":
-        return ["categorical"];
+      case "plz":
+      case "hausnummer":
+        return ["uniform", "normal", "poisson"];
+      case "adresse":
+      case "straße":
+      case "stadt":
+      case "land":
+      case "email":
+      case "telefon":
+        return ["categorical"]; // ✅ Neue Feldtypen
       default:
         return ["normal", "uniform", "gamma"];
     }
   };
 
-  // Input-Type
+  // Input-Type erweitert
   const getInputType = () => {
-    if (fieldType === "Date") return "date";
-    if (fieldType === "Integer" || "körpergröße" || "alter") return "number";
+    if (fieldType.toLowerCase() === "date") return "date";
+    if (["integer", "körpergröße", "alter", "plz", "hausnummer", "gewicht"].includes(fieldType.toLowerCase())) 
+      return "number";
     return "text";
   };
 
-  // Platzhalter
+  // ✅ NEU: Verbesserte Platzhalter für mimesis-Typen
   const getPlaceholder = (distribution: string, paramKey: string) => {
-    if (fieldType === "Date") return "TT.MM.JJJJ";
+    const fieldTypeLower = fieldType.toLowerCase();
+    
+    if (fieldTypeLower === "date") return "TT.MM.JJJJ";
 
-    if (fieldType === "körpergröße" || fieldType === "Integer" || fieldType === "alter") {
+    if (["körpergröße", "integer", "alter", "plz", "hausnummer", "gewicht"].includes(fieldTypeLower)) {
       switch (distribution) {
         case "uniform":
           return paramKey === "a" ? "Minimum" : "Maximum";
+        case "normal":
+          return paramKey === "a" ? "Mittelwert (μ)" : "Std.Abweichung (σ)";
+        case "poisson":
+          return "Durchschnitt (λ)";
         default:
           return paramKey === "a" ? "Parameter A" : "Parameter B";
       }
     }
 
-    if (fieldType === "name") {
+    if (["name", "vorname", "nachname", "vollständigername", "geschlecht", "adresse", "straße", "stadt", "land", "email", "telefon"].includes(fieldTypeLower)) {
       if (distribution === "categorical")
         return paramKey === "a" ? "Werte (mit Komma)" : "Gewichte (mit Komma)";
     }
@@ -273,14 +277,18 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
   // Soll Parameter B angezeigt werden?
   const shouldShowParameterB = (distribution: string) => {
     if (distribution === "exponential") return false;
-    if (fieldType === "Integer" && distribution === "poisson") return false;
+    if (distribution === "poisson") return false;
+    if (["name", "vorname", "nachname", "geschlecht", "adresse", "straße", "stadt", "land", "email", "telefon"].includes(fieldType.toLowerCase()) && 
+        distribution === "categorical") {
+      return true; // ✅ Bei kategorialen Verteilungen für Namen etc. Parameter B für Gewichte anzeigen
+    }
     return true;
   };
 
   // Schrittweite
   const getStepValue = () => {
-    if (fieldType === "körpergröße") return "0.01";
-    if (fieldType === "Integer" || fieldType === "alter") return "1";
+    if (["körpergröße", "gewicht"].includes(fieldType.toLowerCase())) return "0.01";
+    if (["integer", "alter", "plz", "hausnummer"].includes(fieldType.toLowerCase())) return "1";
     return undefined;
   };
 
@@ -295,7 +303,6 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
       setSelectedColumn("");
       setDetectionResult(null);
 
-      // Datei an Backend senden, um Spalten zu erhalten
       const formData = new FormData();
       formData.append("file", file);
 
@@ -340,7 +347,6 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
         return res.json();
       })
       .then((data) => {
-        // Erwartete Daten: { best_distribution, parameters, values, p_value }
         setDetectionResult(data);
 
         if (data.best_distribution) {
@@ -349,6 +355,7 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
             parameterA: data.parameters[0]?.toString() || "",
             parameterB: data.parameters[1]?.toString() || "",
             extraParams: data.parameters.slice(2).map((p: number) => p.toString()),
+            nationality: form.nationality, // ✅ Nationalität beibehalten
           });
         }
       })
@@ -364,7 +371,6 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
     const values = detectionResult.values || [];
     if (values.length === 0) return null;
 
-    // Histogramm mit 10 Bins
     const minVal = Math.min(...values);
     const maxVal = Math.max(...values);
     const binCount = 10;
@@ -375,15 +381,13 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
       bins.push(minVal + i * binWidth);
     }
 
-    // Histogramm zählen
     const histCounts = new Array(binCount).fill(0);
     values.forEach((v) => {
       let idx = Math.floor((v - minVal) / binWidth);
-      if (idx === binCount) idx = binCount - 1; // Randfälle
+      if (idx === binCount) idx = binCount - 1;
       if (idx >= 0 && idx < binCount) histCounts[idx]++;
     });
 
-    // Fit-Kurve für erkannte Verteilung
     const fitCurve = calculateFitCurve(
       detectionResult.best_distribution || detectionResult.distribution || "",
       detectionResult.parameters,
@@ -391,8 +395,7 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
       values.length
     );
 
-    // Daten für Chart.js
-    const labels = bins.map((b, i) => {
+    const labels = bins.map((b) => {
       const end = b + binWidth;
       return `${b.toFixed(2)} - ${end.toFixed(2)}`;
     });
@@ -451,15 +454,20 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
           overflowY: "auto",
         }}
       >
-        {/* Titel */}
+        {/* Titel mit Nationalitätsinfo */}
         <div className="d-flex align-items-start mb-4">
           <h3>Verteilung spezifizieren für {fieldType}</h3>
+          {nationality && nationality !== "german" && (
+            <span className="badge bg-primary ms-2" style={{ fontSize: "0.8rem" }}>
+              {nationality}
+            </span>
+          )}
         </div>
 
         {/* Option 1 */}
         <div className="row mb-3">
           <div className="col-12">
-            <h5 className="fw-bold">Option 1:</h5>
+            <h5 className="fw-bold">Option 1: Manuelle Verteilungskonfiguration</h5>
           </div>
         </div>
 
@@ -584,7 +592,7 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
         {/* Option 2: Datei-Upload */}
         <div className="row mb-3">
           <div className="col-12">
-            <h5 className="fw-bold">Option 2:</h5>
+            <h5 className="fw-bold">Option 2: Verteilung aus Datei erkennen</h5>
           </div>
         </div>
 
@@ -669,64 +677,14 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
           </div>
         )}
 
-        {/* Anzeige der Ergebnisse und Chart */}
-        {detectionResult && (
-          <div className="row mt-3">
-            <div className="col-12">
-              <h6>
-                Erkannte Verteilung:{" "}
-                {getDistributionLabel(
-                  detectionResult.best_distribution || detectionResult.distribution || ""
-                )}
-              </h6>
-              <p>
-                Parameter: {detectionResult.parameters.map((p) => p.toString()).join(", ")} <br />
-                p-Wert: {detectionResult.p_value.toFixed(4)}
-              </p>
-              {chartData && (
-                <div style={{ maxWidth: "700px", maxHeight: "400px" }}>
-                  <Chart
-                    type="bar"
-                    data={chartData}
-                    options={{
-                      responsive: true,
-                      scales: {
-                        y: {
-                          beginAtZero: true,
-                          title: {
-                            display: true,
-                            text: "Häufigkeit",
-                          },
-                        },
-                        x: {
-                          title: {
-                            display: true,
-                            text: "Wertebereiche",
-                          },
-                        },
-                      },
-                      plugins: {
-                        legend: {
-                          position: "top",
-                        },
-                        tooltip: {
-                          mode: "index",
-                          intersect: false,
-                        },
-                      },
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
         {/* Aktionen */}
         <div className="text-center mt-4">
           <button
             className="me-3 btn btn-success px-4 py-2"
-            onClick={() => onSave(form)}
+            onClick={() => onSave({
+              ...form,
+              nationality: nationality // ✅ Nationalität mit speichern
+            })}
             disabled={!form.distribution}
           >
             Speichern

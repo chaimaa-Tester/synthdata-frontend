@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
+// ✅ NEU: Typen definieren
+type Nationality = 'german' | 'english' | 'french' | 'spanish' | 'turkish' | 'russian' | 'chinese' | 'japanese' | 'italian';
+
+type FieldType = "name" | "vorname" | "nachname" | "vollständigername" | "körpergröße" | "gewicht" | "Date" | "Integer" | "alter" | "geschlecht" | "adresse" | "straße" | "stadt" | "land" | "email" | "telefon" | "plz" | "hausnummer";
+
 export const FieldRow = ({
   row,
   idx,
@@ -8,6 +13,10 @@ export const FieldRow = ({
   handleDeleteRow,
   allFieldNames,
   dragHandleProps,
+  // ✅ NEU: Nationalität Props
+  onNationalityChange,
+  fieldTypeOptions,
+  nationalityOptions,
 }: {
   row: any;
   idx: number;
@@ -16,6 +25,10 @@ export const FieldRow = ({
   handleDeleteRow: (idx: number) => void;
   allFieldNames: string[];
   dragHandleProps?: any;
+  // ✅ NEU: Nationalität Props
+  onNationalityChange: (nationality: Nationality) => void;
+  fieldTypeOptions: { value: FieldType; label: string }[];
+  nationalityOptions: { value: Nationality; label: string; flag: string }[];
 }) => {
   const parseDeps = (text: string): string[] =>
     (text || "")
@@ -71,18 +84,21 @@ export const FieldRow = ({
   return (
     <div
       className="row mb-2 align-items-center flex-nowrap"
-      style={{ minWidth: 1200 }}
+      style={{ minWidth: 1400 }} // ✅ NEU: Breite angepasst für neue Spalte
     >
-      {/* Platzhalter für Draghandle */}
-      <div className="col-auto d-flex align-items-center px-0"
-      {...(dragHandleProps || {})}
-      style={{
-        cursor: "grab",
-        userSelect: "none",
-        padding: "6px 8px"}}
-      role="button"
-      aria-label="Drag Handle"
-      onMouseDown={(e) => e.preventDefault()}>
+      {/* Drag Handle */}
+      <div 
+        className="col-auto d-flex align-items-center px-0"
+        {...(dragHandleProps || {})}
+        style={{
+          cursor: "grab",
+          userSelect: "none",
+          padding: "6px 8px"
+        }}
+        role="button"
+        aria-label="Drag Handle"
+        onMouseDown={(e) => e.preventDefault()}
+      >
         <span style={{ fontSize: 20, opacity: 0.8 }}>☰</span>
       </div>
 
@@ -96,20 +112,34 @@ export const FieldRow = ({
         />
       </div>
 
-      {/* Feldtyp */}
+      {/* ✅ NEU: Nationalität */}
+      <div className="col-2">
+        <select
+          className="form-select"
+          value={row.nationality || 'german'}
+          onChange={(e) => onNationalityChange(e.target.value as Nationality)}
+          title="Nationalität für realistische Daten"
+        >
+          {nationalityOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.flag} {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Feldtyp - ✅ ERWEITERT: Alle mimesis-Typen */}
       <div className="col-2">
         <select
           className="form-select"
           value={row.type}
           onChange={(e) => onChange(idx, "type", e.target.value)}
         >
-          <option value="name">Name</option>
-          <option value="körpergröße">Körpergröße</option>
-          <option value="alter">Alter</option>
-          <option value="geschlecht">Geschlecht</option>
-          <option value="Date">Date</option>
-          <option value="Integer">Integer</option>
-          <option value="Float">Float</option>
+          {fieldTypeOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -214,23 +244,26 @@ export const FieldRow = ({
       </div>
 
       {/* Verteilung & Löschen */}
-      <div className="col-12 d-flex align-items-center">
+      <div className="col-3 d-flex align-items-center">
         <button
           className="btn me-3"
           style={{
             backgroundColor: "rgb(115, 67, 131)",
             color: "white",
+            minWidth: "150px"
           }}
           onClick={() => onOpenModal(idx)}
+          title="Verteilung und Parameter konfigurieren"
         >
           Verteilung spezifizieren
         </button>
-      <div className="col-auto d-flex align-items-center"></div>
+        
+        {/* Löschen-Button (direkt neben Verteilung) */}
         <button
           type="button"
-          className="btn"
+          className="btn ms-3"
           aria-label="Delete"
-          style={{ padding: 0, background: "none", border: "none" }}
+          style={{ padding: 0, background: "none", border: "none", marginLeft: 8 }}
           onClick={() => handleDeleteRow(idx)}
           title="Zeile löschen"
         >
@@ -247,8 +280,8 @@ export const FieldRow = ({
               d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1 0-2h3.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1H14a1 1 0 0 1 1 1zm-3-1a.5.5 0 0 0-.5-.5h-2a.5.5 0 0 0-.5.5V3h3V2zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118z"
             />
           </svg>
-        </button>
-      </div>
+          </button>
+        </div>
     </div>
   );
 };
