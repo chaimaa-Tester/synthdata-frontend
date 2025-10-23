@@ -176,14 +176,14 @@ export const SynthDataWizard = () => {
         { responseType: "blob" }
       );
 
-      const blob = new Blob([response.data], { type: "text/csv" });
+      const blob = new Blob([response.data]);
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
       
       // NEU: Dateiname mit Timestamp
       const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-      link.download = `synthdata_${timestamp}.csv`;
+      link.download = `synthdata_${timestamp}.` + exportData.format.toLowerCase();
       
       document.body.appendChild(link);
       link.click();
