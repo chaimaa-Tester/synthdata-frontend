@@ -19,7 +19,6 @@ export const FieldTableHeader = () => (
   >
     <div className="col-auto px-2"></div>
     <div className="col-2 px-3">Feldname</div>
-    <div className="col-2 px-3">Nationalität</div>
     <div className="col-2 px-3">Feldtyp</div>
     <div className="col-2 px-3">Abhängigkeit</div>
     <div className="col-3 px-3">Verteilung</div>

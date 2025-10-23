@@ -29,7 +29,6 @@ type DistributionModalProps = {
   initialData: any;
   fieldType: string;
   allFieldNames?: string[];
-  nationality?: string; // Neu: Nationalität für Namensgenerierung
 };
 
 // Hilfsfunktion zum Berechnen der Fit-Kurve Y-Werte
@@ -129,7 +128,6 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
   onSave,
   initialData,
   fieldType,
-  nationality = "german", // ✅ Default auf Deutsch
 }) => {
   if (!show) return null;
 
@@ -140,7 +138,6 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
       parameterA: "",
       parameterB: "",
       extraParams: [] as string[],
-      nationality: nationality, // ✅ Nationalität im Form-State
     }
   );
 
@@ -164,10 +161,9 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
         parameterA: "",
         parameterB: "",
         extraParams: [] as string[],
-        nationality: nationality, // ✅ Nationalität übernehmen
       }
     );
-  }, [initialData, nationality]); // ✅ nationality als Dependency
+  }, [initialData]);
 
   // Handler zum Ändern eines zusätzlichen Parameters
   const handleExtraParamChange = (idx: number, value: string) => {
@@ -454,15 +450,6 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
           overflowY: "auto",
         }}
       >
-        {/* Titel mit Nationalitätsinfo */}
-        <div className="d-flex align-items-start mb-4">
-          <h3>Verteilung spezifizieren für {fieldType}</h3>
-          {nationality && nationality !== "german" && (
-            <span className="badge bg-primary ms-2" style={{ fontSize: "0.8rem" }}>
-              {nationality}
-            </span>
-          )}
-        </div>
 
         {/* Option 1 */}
         <div className="row mb-3">
@@ -683,7 +670,6 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
             className="me-3 btn btn-success px-4 py-2"
             onClick={() => onSave({
               ...form,
-              nationality: nationality // ✅ Nationalität mit speichern
             })}
             disabled={!form.distribution}
           >

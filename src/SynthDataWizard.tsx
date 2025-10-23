@@ -23,9 +23,6 @@ import {
 
 // -------------------- Typen & Helpers --------------------
 
-// NEU: Nationalitätstyp definieren
-type Nationality = 'german' | 'english' | 'french' | 'spanish' | 'turkish' | 'russian' | 'chinese' | 'japanese' | 'italian';
-
 // NEU: Erweiterte Feldtypen für mimesis
 type FieldType = "name" | "vorname" | "nachname" | "vollständigername" | "körpergröße" | "gewicht" | "Date" | "Integer" | "alter" | "geschlecht" | "adresse" | "straße" | "stadt" | "land" | "email" | "telefon" | "plz" | "hausnummer";
 
@@ -34,36 +31,20 @@ export type Row = {
   name: string;
   type: FieldType; // ✅ NEU: Erweiterte Feldtypen
   dependency: string;
-  nationality: Nationality; // ✅ NEU: Nationalität hinzugefügt
   distributionConfig: {
     distribution: string;
     parameterA: string;
     parameterB: string;
     extraParams: string[];
     dependency: string;
-    nationality?: Nationality; // ✅ Optional für Abwärtskompatibilität
   };
 };
-
-// ✅ NEU: Nationalitätsoptionen für Dropdown
-const nationalityOptions: { value: Nationality; label: string; flag: string }[] = [
-  { value: 'german', label: 'Deutsch', flag: '🇩🇪' },
-  { value: 'english', label: 'Englisch', flag: '🇺🇸' },
-  { value: 'french', label: 'Französisch', flag: '🇫🇷' },
-  { value: 'spanish', label: 'Spanisch', flag: '🇪🇸' },
-  { value: 'turkish', label: 'Türkisch', flag: '🇹🇷' },
-  { value: 'russian', label: 'Russisch', flag: '🇷🇺' },
-  { value: 'chinese', label: 'Chinesisch', flag: '🇨🇳' },
-  { value: 'japanese', label: 'Japanisch', flag: '🇯🇵' },
-  { value: 'italian', label: 'Italienisch', flag: '🇮🇹' }
-];
 
 const makeDefaultRow = (): Row => ({
   id: `${Date.now()}-${Math.random()}`,
   name: "",
   type: "name",
   dependency: "",
-  nationality: "german", // ✅ NEU: Default auf Deutsch
   distributionConfig: {
     distribution: "",
     parameterA: "",
@@ -104,18 +85,6 @@ export const SynthDataWizard = () => {
   const handleAddRow = () =>
     setRows((prev) => [...prev, makeDefaultRow()]);
 
-  // ✅ NEU: Nationalität ändern
-  const handleNationalityChange = (idx: number, nationality: Nationality) => {
-    setRows((prev) => {
-      const next = [...prev];
-      next[idx] = { 
-        ...next[idx], 
-        nationality 
-      };
-      return next;
-    });
-  };
-
   const handleRowChange = (idx: number, field: string, value: any) => {
     setRows((prev) => {
       const next = [...prev];
@@ -146,7 +115,6 @@ export const SynthDataWizard = () => {
         ...next[activeRowIdx],
         distributionConfig: { 
           ...distributionData,
-          nationality: next[activeRowIdx].nationality // ✅ Nationalität mit speichern
         },
         dependency:
           distributionData?.dependency ?? next[activeRowIdx].dependency ?? "",
@@ -163,7 +131,6 @@ export const SynthDataWizard = () => {
       const exportData = {
         rows: rows.map(row => ({
           ...row,
-          nationality: row.nationality // Sicherstellen dass Nationalität mitgesendet wird
         })),
         rowCount,
         format,
@@ -267,9 +234,7 @@ export const SynthDataWizard = () => {
               onOpenModal={() => handleOpenModal(idx)}
               handleDeleteRow={handleDeleteRow}
               allFieldNames={allFieldNames}
-              onNationalityChange={(nationality) => handleNationalityChange(idx, nationality)} // ✅ NEU
               fieldTypeOptions={fieldTypeOptions} // ✅ NEU
-              nationalityOptions={nationalityOptions} // ✅ NEU
             />
           ))}
         </SortableContext>
@@ -284,7 +249,6 @@ export const SynthDataWizard = () => {
           initialData={rows[activeRowIdx].distributionConfig}
           fieldType={rows[activeRowIdx].type}
           allFieldNames={allFieldNames}
-          nationality={rows[activeRowIdx].nationality} // ✅ NEU: Nationalität an Modal übergeben
         />
       )}
 

@@ -1,8 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-// ✅ NEU: Typen definieren
-type Nationality = 'german' | 'english' | 'french' | 'spanish' | 'turkish' | 'russian' | 'chinese' | 'japanese' | 'italian';
-
 type FieldType = "name" | "vorname" | "nachname" | "vollständigername" | "körpergröße" | "gewicht" | "Date" | "Integer" | "alter" | "geschlecht" | "adresse" | "straße" | "stadt" | "land" | "email" | "telefon" | "plz" | "hausnummer";
 
 export const FieldRow = ({
@@ -13,10 +10,7 @@ export const FieldRow = ({
   handleDeleteRow,
   allFieldNames,
   dragHandleProps,
-  // ✅ NEU: Nationalität Props
-  onNationalityChange,
   fieldTypeOptions,
-  nationalityOptions,
 }: {
   row: any;
   idx: number;
@@ -26,9 +20,7 @@ export const FieldRow = ({
   allFieldNames: string[];
   dragHandleProps?: any;
   // ✅ NEU: Nationalität Props
-  onNationalityChange: (nationality: Nationality) => void;
   fieldTypeOptions: { value: FieldType; label: string }[];
-  nationalityOptions: { value: Nationality; label: string; flag: string }[];
 }) => {
   const parseDeps = (text: string): string[] =>
     (text || "")
@@ -110,22 +102,6 @@ export const FieldRow = ({
           onChange={(e) => onChange(idx, "name", e.target.value)}
           placeholder="Feldname"
         />
-      </div>
-
-      {/* ✅ NEU: Nationalität */}
-      <div className="col-2">
-        <select
-          className="form-select"
-          value={row.nationality || 'german'}
-          onChange={(e) => onNationalityChange(e.target.value as Nationality)}
-          title="Nationalität für realistische Daten"
-        >
-          {nationalityOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.flag} {option.label}
-            </option>
-          ))}
-        </select>
       </div>
 
       {/* Feldtyp - ✅ ERWEITERT: Alle mimesis-Typen */}

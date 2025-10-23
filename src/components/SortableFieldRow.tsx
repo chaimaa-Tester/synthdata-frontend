@@ -3,7 +3,6 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { FieldRow } from "./FieldRow";
 
-type Nationality = 'german' | 'english' | 'french' | 'spanish' | 'turkish' | 'russian' | 'chinese' | 'japanese' | 'italian';
 type FieldType = "name" | "vorname" | "nachname" | "vollständigername" | "körpergröße" | "gewicht" | "Date" | "Integer" | "alter" | "geschlecht" | "adresse" | "straße" | "stadt" | "land" | "email" | "telefon" | "plz" | "hausnummer";
 
 export type SortableFieldRowProps = {
@@ -15,9 +14,7 @@ export type SortableFieldRowProps = {
   handleDeleteRow: (idx: number) => void;
   allFieldNames: string[]; // GEÄNDERT: Required gemacht (kein ? mehr)
   dragHandleProps?: any;
-  onNationalityChange: (nationality: Nationality) => void;
   fieldTypeOptions: { value: FieldType; label: string }[];
-  nationalityOptions: { value: Nationality; label: string; flag: string }[];
 };
 
 export const SortableFieldRow: React.FC<SortableFieldRowProps> = (props) => {
@@ -37,9 +34,7 @@ export const SortableFieldRow: React.FC<SortableFieldRowProps> = (props) => {
       <FieldRow 
         {...props} 
         dragHandleProps={listeners}
-        onNationalityChange={props.onNationalityChange} // KORREKT: onNationalityChange
         fieldTypeOptions={props.fieldTypeOptions}
-        nationalityOptions={props.nationalityOptions}
       />
     </div>
   );
