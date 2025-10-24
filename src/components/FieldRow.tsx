@@ -7,6 +7,7 @@ export const FieldRow = ({
   idx,
   onChange,
   onOpenModal,
+  onOpenDependencyModal,
   handleDeleteRow,
   allFieldNames,
   dragHandleProps,
@@ -16,6 +17,7 @@ export const FieldRow = ({
   idx: number;
   onChange: (idx: number, field: string, value: any) => void;
   onOpenModal: (idx: number) => void;
+  onOpenDependencyModal?: (idx: number) => void;
   handleDeleteRow: (idx: number) => void;
   allFieldNames: string[];
   dragHandleProps?: any;
@@ -231,8 +233,21 @@ export const FieldRow = ({
           onClick={() => onOpenModal(idx)}
           title="Verteilung und Parameter konfigurieren"
         >
-          Verteilung spezifizieren
+          Standard-Verteilung
         </button>
+
+        <button
+            className="btn"
+            onClick={() => onOpenDependencyModal && onOpenDependencyModal(idx)}
+            disabled={!row.dependency}
+            title={row.dependency ? "Abhängigkeits-Verteilung festlegen" : "Zuerst Abhängigkeit wählen"}
+            style={{
+              backgroundColor: row.dependency ? "rgb(115,67,131)" : "rgba(255,255,255,0.12)",
+              color: "white",
+            }}
+          >
+            Abhängigkeits-Verteilung
+          </button>
         
         {/* Löschen-Button (direkt neben Verteilung) */}
         <button

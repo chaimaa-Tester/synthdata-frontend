@@ -20,6 +20,7 @@ import {
   verticalListSortingStrategy,
   arrayMove,
 } from "@dnd-kit/sortable";
+import { DependencyDistributionModal } from "./components/DependencyDistributionModal";
 
 // -------------------- Typen & Helpers --------------------
 
@@ -35,8 +36,8 @@ export type Row = {
     distribution: string;
     parameterA: string;
     parameterB: string;
-    extraParams: string[];
-    dependency: string;
+    extraParams?: string[];
+    dependency?: string;
   };
 };
 
@@ -69,6 +70,10 @@ export const SynthDataWizard = () => {
   const [showModal, setShowModal] = useState<boolean>(false);
   const [activeRowIdx, setActiveRowIdx] = useState<number | null>(null);
   const sensors = useSensors(useSensor(PointerSensor));
+  const [showDepModal, setShowDepModal] = useState(false);
+  const [depModalRowIdx, setDepModalRowIdx] = useState<number | null>(null);
+  const [depTargetName, setDepTargetName] = useState<string>("");
+  const [depTargetType, setDepTargetType] = useState<string>("");
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -101,12 +106,12 @@ export const SynthDataWizard = () => {
     setActiveRowIdx(idx);
     setShowModal(true);
   };
-
+  
   const handleCloseModal = () => {
     setShowModal(false);
     setActiveRowIdx(null);
   };
-
+  
   const handleSaveDistribution = (distributionData: any) => {
     if (activeRowIdx === null) return;
     setRows((prev) => {
@@ -124,6 +129,61 @@ export const SynthDataWizard = () => {
     setShowModal(false);
     setActiveRowIdx(null);
   };
+
+  const handleOpenDependencyModal = (rowIdx: number) => {
+    const depRaw = (rows[rowIdx].dependency || "").split(",")[0]?.trim() || "";
+    if (!depRaw) {
+      alert("Bitte zuerst eine Abhängigkeit wählen.");
+      return;
+    }
+    const targetIdx = rows.findIndex((r) => r.name === depRaw);
+    const targetType = targetIdx !== -1 ? rows[targetIdx].type : "";
+    setDepModalRowIdx(rowIdx);
+    setDepTargetName(depRaw);
+    setDepTargetType(targetType);
+    setShowDepModal(true);
+  };
+
+  const handleCloseDepModal = () => {
+    setShowDepModal(false);
+    setDepModalRowIdx(null);
+    setDepTargetName("");
+    setDepTargetType("");
+  };
+
+  // NEU: Speichert die vom Modal definierte Verteilung auf das Target-Feld (so wird z.B. 'geschlecht' auf 80/20 gesetzt)
+  const handleSaveDependencyDistribution = (distConfig: any) => {
+    // distConfig: { distribution, parameterA, parameterB, ... }
+    if (!depTargetName) {
+      handleCloseDepModal();
+      return;
+    }
+    setRows((prev) => {
+      const next = [...prev];
+      const targetIdx = next.findIndex((r) => r.name === depTargetName);
+      if (targetIdx !== -1) {
+        next[targetIdx] = {
+          ...next[targetIdx],
+          distributionConfig: {
+            ...next[targetIdx].distributionConfig,
+            ...distConfig,
+          },
+        };
+      } else if (depModalRowIdx !== null) {
+        // Fallback: wenn Target nicht gefunden, speichere beim anfragenden Row
+        next[depModalRowIdx] = {
+          ...next[depModalRowIdx],
+          distributionConfig: {
+            ...next[depModalRowIdx].distributionConfig,
+            ...distConfig,
+          },
+        };
+      }
+      return next;
+    });
+    handleCloseDepModal();
+  }; 
+
 
   const handleExport = async () => {
     try {
@@ -232,6 +292,7 @@ export const SynthDataWizard = () => {
               idx={idx}
               onChange={handleRowChange}
               onOpenModal={() => handleOpenModal(idx)}
+              onOpenDependencyModal={() => handleOpenDependencyModal(idx)}
               handleDeleteRow={handleDeleteRow}
               allFieldNames={allFieldNames}
               fieldTypeOptions={fieldTypeOptions} // ✅ NEU
@@ -249,6 +310,23 @@ export const SynthDataWizard = () => {
           initialData={rows[activeRowIdx].distributionConfig}
           fieldType={rows[activeRowIdx].type}
           allFieldNames={allFieldNames}
+        />
+      )}
+
+      {showDepModal && depModalRowIdx !== null && (
+        <DependencyDistributionModal
+          show={showDepModal}
+          onClose={handleCloseDepModal}
+          onSave={handleSaveDependencyDistribution}
+          targetName={depTargetName}
+          targetType={depTargetType}
+          initialData={
+            // falls Ziel-Feld existiert, übergebe dessen aktuelle config
+            (() => {
+              const t = rows.find((r) => r.name === depTargetName);
+              return t ? t.distributionConfig : undefined;
+            })()
+          }
         />
       )}
 
