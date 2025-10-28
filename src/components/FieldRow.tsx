@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { UseCaseModal } from "./UseCaseModal";
 
-type FieldType = "name" | "vorname" | "nachname" | "vollständigername" | "körpergröße" | "gewicht" | "Date" | "Integer" | "alter" | "geschlecht" | "adresse" | "straße" | "stadt" | "land" | "email" | "telefon" | "plz" | "hausnummer";
+// FieldType wird jetzt im UseCaseModal definiert
 
 export const FieldRow = ({
   row,
@@ -11,7 +12,6 @@ export const FieldRow = ({
   handleDeleteRow,
   allFieldNames,
   dragHandleProps,
-  fieldTypeOptions,
 }: {
   row: any;
   idx: number;
@@ -21,8 +21,6 @@ export const FieldRow = ({
   handleDeleteRow: (idx: number) => void;
   allFieldNames: string[];
   dragHandleProps?: any;
-  // ✅ NEU: Nationalität Props
-  fieldTypeOptions: { value: FieldType; label: string }[];
 }) => {
   const parseDeps = (text: string): string[] =>
     (text || "")
@@ -49,6 +47,9 @@ export const FieldRow = ({
 
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
+  
+  // NEU: Use Case Modal State
+  const [showUseCaseModal, setShowUseCaseModal] = useState(false);
 
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
@@ -78,7 +79,7 @@ export const FieldRow = ({
   return (
     <div
       className="row mb-2 align-items-center flex-nowrap"
-      style={{ minWidth: 1400 }} // ✅ NEU: Breite angepasst für neue Spalte
+      style={{ minWidth: 1400 }} // NEU: Breite angepasst für neue Spalte
     >
       {/* Drag Handle */}
       <div 
@@ -106,19 +107,16 @@ export const FieldRow = ({
         />
       </div>
 
-      {/* Feldtyp - ✅ ERWEITERT: Alle mimesis-Typen */}
+      {/* Feldtyp - wie Feldname */}
       <div className="col-2">
-        <select
-          className="form-select"
-          value={row.type}
-          onChange={(e) => onChange(idx, "type", e.target.value)}
-        >
-          {fieldTypeOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+        <input
+          className="form-control"
+          value="Feldtyp"
+          readOnly
+          onClick={() => setShowUseCaseModal(true)}
+          style={{ cursor: "pointer" }}
+          placeholder="Feldtyp"
+        />
       </div>
 
       {/* Abhängigkeit Dropdown */}
@@ -273,6 +271,16 @@ export const FieldRow = ({
           </svg>
           </button>
         </div>
+
+        {/* NEU: Use Case Modal */}
+        <UseCaseModal
+          show={showUseCaseModal}
+          onClose={() => setShowUseCaseModal(false)}
+          onSelectField={(fieldType) => {
+            onChange(idx, "type", fieldType);
+            setShowUseCaseModal(false);
+          }}
+        />
     </div>
   );
 };

@@ -177,7 +177,7 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
     setForm({ ...form, extraParams: [...(form.extraParams || []), ""] });
   };
 
-  // ✅ NEU: Verfügbare Verteilungen erweitert für mimesis-Typen
+  //  NEU: Verfügbare Verteilungen erweitert für mimesis-Typen
   const getAllowedDistributions = (type: string) => {
     switch (type) {
       case "name":
@@ -207,7 +207,7 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
       case "land":
       case "email":
       case "telefon":
-        return ["categorical"]; // ✅ Neue Feldtypen
+        return ["categorical"]; //  Neue Feldtypen
       default:
         return ["normal", "uniform", "gamma"];
     }
@@ -221,7 +221,7 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
     return "text";
   };
 
-  // ✅ NEU: Verbesserte Platzhalter für mimesis-Typen
+  //  NEU: Verbesserte Platzhalter für mimesis-Typen
   const getPlaceholder = (distribution: string, paramKey: string) => {
     const fieldTypeLower = fieldType.toLowerCase();
     

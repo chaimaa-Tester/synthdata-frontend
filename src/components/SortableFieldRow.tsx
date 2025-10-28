@@ -3,7 +3,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { FieldRow } from "./FieldRow";
 
-type FieldType = "name" | "vorname" | "nachname" | "vollständigername" | "körpergröße" | "gewicht" | "Date" | "Integer" | "alter" | "geschlecht" | "adresse" | "straße" | "stadt" | "land" | "email" | "telefon" | "plz" | "hausnummer";
+// FieldType wird jetzt im UseCaseModal definiert
 
 export type SortableFieldRowProps = {
   id: string;
@@ -13,9 +13,8 @@ export type SortableFieldRowProps = {
   onOpenModal: (idx: number) => void;
   onOpenDependencyModal?: (idx: number) => void;
   handleDeleteRow: (idx: number) => void;
-  allFieldNames: string[]; // GEÄNDERT: Required gemacht (kein ? mehr)
+  allFieldNames: string[];
   dragHandleProps?: any;
-  fieldTypeOptions: { value: FieldType; label: string }[];
 };
 
 export const SortableFieldRow: React.FC<SortableFieldRowProps> = (props) => {
@@ -35,7 +34,6 @@ export const SortableFieldRow: React.FC<SortableFieldRowProps> = (props) => {
       <FieldRow 
         {...props} 
         dragHandleProps={listeners}
-        fieldTypeOptions={props.fieldTypeOptions}
       />
     </div>
   );

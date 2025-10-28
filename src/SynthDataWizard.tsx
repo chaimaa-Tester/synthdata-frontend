@@ -24,13 +24,34 @@ import { DependencyDistributionModal } from "./components/DependencyDistribution
 
 // -------------------- Typen & Helpers --------------------
 
-// NEU: Erweiterte Feldtypen für mimesis
-type FieldType = "name" | "vorname" | "nachname" | "vollständigername" | "körpergröße" | "gewicht" | "Date" | "Integer" | "alter" | "geschlecht" | "adresse" | "straße" | "stadt" | "land" | "email" | "telefon" | "plz" | "hausnummer";
+// NEU: Use Case basierte Feldtypen 
+type FieldType = 
+  // Basis-Felder (verwendet in mehreren Use Cases)
+  | "name" | "vorname" | "nachname" | "geschlecht" | "alter" | "email" | "telefon" | "Date" | "Integer" 
+  
+  // Gesundheitswesen Use Case
+
+  | "körpergröße" | "gewicht" | "Body-Mass-Index" | "gewichtdiagnose" 
+
+  // Finanzwesen Use Case
+
+
+  | "kontonummer" | "transaktionsdatum" | "transaktionsart" | "betrag"
+
+  // Containerlogistik Use Case
+
+  | "unitName" | "timeIn" | "timeOut" | "attributeSizes" | "attributeStatus"
+  
+  | "attributeWeights" | "attributeDirections" | "inboundCarrierId" 
+  
+  | "outboundCarrierId" | "serviceId" | "linerId";
+
+// Use Cases werden jetzt im UseCaseModal verwaltet
 
 export type Row = {
   id: string;
   name: string;
-  type: FieldType; // ✅ NEU: Erweiterte Feldtypen
+  type: FieldType; //  NEU: Erweiterte Feldtypen
   dependency: string;
   distributionConfig: {
     distribution: string;
@@ -169,6 +190,15 @@ export const SynthDataWizard = () => {
             ...distConfig,
           },
         };
+        // Ensure that any row which requested this dependency actually records
+        // the dependency at top-level (so export and backend get the correct
+        // dependency column name). depModalRowIdx is the requesting row.
+        if (depModalRowIdx !== null && next[depModalRowIdx]) {
+          next[depModalRowIdx] = {
+            ...next[depModalRowIdx],
+            dependency: depTargetName,
+          };
+        }
       } else if (depModalRowIdx !== null) {
         // Fallback: wenn Target nicht gefunden, speichere beim anfragenden Row
         next[depModalRowIdx] = {
@@ -177,6 +207,8 @@ export const SynthDataWizard = () => {
             ...next[depModalRowIdx].distributionConfig,
             ...distConfig,
           },
+          // Also ensure the dependency name is set explicitly when saving here
+          dependency: depTargetName || next[depModalRowIdx].dependency,
         };
       }
       return next;
@@ -184,9 +216,39 @@ export const SynthDataWizard = () => {
     handleCloseDepModal();
   }; 
 
+  // Validate that name-like fields have a proper dependency on a 'geschlecht' field
+  const validateDependencies = (rowsToCheck: Row[]) => {
+    const errors: string[] = [];
+    const nameLike: FieldType[] = ["name", "vorname", "nachname"];
+    for (const r of rowsToCheck) {
+      if (nameLike.includes(r.type)) {
+        const depRaw = (r.dependency || "").split(",")[0]?.trim() || "";
+        if (!depRaw) {
+          errors.push(`Feld '${r.name || "(kein Name)"}' vom Typ '${r.type}' hat keine Abhängigkeit definiert.`);
+          continue;
+        }
+        const target = rowsToCheck.find((t) => t.name === depRaw);
+        if (!target) {
+          errors.push(`Feld '${r.name || "(kein Name)"}' hängt von '${depRaw}', dieses Feld existiert aber nicht.`);
+          continue;
+        }
+        if (target.type !== "geschlecht") {
+          errors.push(`Feld '${r.name || "(kein Name)"}' hängt von '${depRaw}', hat aber Typ '${target.type}' (erwartet 'geschlecht').`);
+        }
+      }
+    }
+    return errors;
+  };
+
 
   const handleExport = async () => {
     try {
+      // Pre-export validation: ensure name-like fields depend on a 'geschlecht' field
+      const depProblems = validateDependencies(rows);
+      if (depProblems.length > 0) {
+        alert("Bitte beheben Sie die folgenden Abhängigkeits-Probleme vor dem Export:\n\n" + depProblems.join("\n"));
+        return;
+      }
       // NEU: Nationalität an Backend senden
       const exportData = {
         rows: rows.map(row => ({
@@ -228,28 +290,6 @@ export const SynthDataWizard = () => {
       .filter((n) => n.length > 0);
     return Array.from(new Set(names));
   }, [rows]);
-
-  // ✅ NEU: Feldtyp-Optionen für mimesis
-  const fieldTypeOptions: { value: FieldType; label: string }[] = [
-    { value: "name", label: "Vollständiger Name" },
-    { value: "vorname", label: "Vorname" },
-    { value: "nachname", label: "Nachname" },
-    { value: "vollständigername", label: "Vollständiger Name" },
-    { value: "geschlecht", label: "Geschlecht" },
-    { value: "alter", label: "Alter" },
-    { value: "körpergröße", label: "Körpergröße" },
-    { value: "gewicht", label: "Gewicht" },
-    { value: "adresse", label: "Adresse" },
-    { value: "straße", label: "Straße" },
-    { value: "stadt", label: "Stadt" },
-    { value: "land", label: "Land" },
-    { value: "plz", label: "PLZ" },
-    { value: "hausnummer", label: "Hausnummer" },
-    { value: "email", label: "E-Mail" },
-    { value: "telefon", label: "Telefon" },
-    { value: "Date", label: "Datum" },
-    { value: "Integer", label: "Ganzzahl" }
-  ];
 
   return (
     <div
@@ -295,7 +335,6 @@ export const SynthDataWizard = () => {
               onOpenDependencyModal={() => handleOpenDependencyModal(idx)}
               handleDeleteRow={handleDeleteRow}
               allFieldNames={allFieldNames}
-              fieldTypeOptions={fieldTypeOptions} // ✅ NEU
             />
           ))}
         </SortableContext>
