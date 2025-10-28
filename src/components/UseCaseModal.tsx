@@ -32,7 +32,7 @@ type UseCaseModalProps = {
   onSelectField: (fieldType: FieldType) => void;
 };
 
-const useCases: UseCase[] = [
+export const useCases: UseCase[] = [
   // Containerlogistik Use Case
   {
     id: "containerlogistik",

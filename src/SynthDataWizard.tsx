@@ -5,7 +5,7 @@ import { DistributionModal } from "./components/DistributionModal";
 import { SortableFieldRow } from "./components/SortableFieldRow";
 import { FieldTableHeader } from "./components/FieldTableHeader";
 import { ExportOptions } from "./components/ExportOptions";
-
+import { useCases } from "./components/UseCaseModal"
 // NEU: dnd-kit imports
 import {
   DndContext,
@@ -240,6 +240,15 @@ export const SynthDataWizard = () => {
     return errors;
   };
 
+  const getUseCaseIdForFieldType = (fieldType: FieldType): string | null => {
+    for (const uc of useCases) {
+      if (uc.fields.some(field => field.value === fieldType)) {
+        return uc.id;
+      }
+    }
+    return null;
+  }
+
 
   const handleExport = async () => {
     try {
@@ -249,14 +258,25 @@ export const SynthDataWizard = () => {
         alert("Bitte beheben Sie die folgenden Abhängigkeits-Probleme vor dem Export:\n\n" + depProblems.join("\n"));
         return;
       }
-      // NEU: Nationalität an Backend senden
+
+      // Hinzufügen der Use Case ID zum Export-Objekt
+      const allFieldTypes = rows.map(row => row.type)
+
+      // Filtern der eindeutigen Use Case IDs, die tatsächlich verwendet werden
+      const usedUseCaseIds = Array.from(new Set(
+        allFieldTypes
+          .map(getUseCaseIdForFieldType)
+          .filter(Boolean) as string[]
+      ))
+      
       const exportData = {
         rows: rows.map(row => ({
           ...row,
         })),
         rowCount,
         format,
-        lineEnding
+        lineEnding,
+        usedUseCaseIds
       };
 
       const response = await axios.post(
