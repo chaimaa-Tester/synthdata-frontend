@@ -52,6 +52,7 @@ export const ExportOptions = ({
         <option>CSV</option>
         <option>XLSX</option>
         <option>JSON</option>
+        <option>SQL</option>
       </select>
     </div>
     {/* Auswahlfeld für das Zeilenende */}
