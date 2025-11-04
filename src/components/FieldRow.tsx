@@ -111,11 +111,15 @@ export const FieldRow = ({
       <div className="col-2">
         <input
           className="form-control"
-          value="Feldtyp"
+          value={row.type || "Feldtyp wählen"}
           readOnly
           onClick={() => setShowUseCaseModal(true)}
-          style={{ cursor: "pointer" }}
-          placeholder="Feldtyp"
+          style={{
+            cursor: "pointer",
+            backgroundColor: "white",
+            color: row.type ? "black" : "#6c757d"
+          }}
+          placeholder="Feldtyp wählen"
         />
       </div>
 

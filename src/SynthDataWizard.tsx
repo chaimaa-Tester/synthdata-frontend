@@ -27,7 +27,7 @@ import { DependencyDistributionModal } from "./components/DependencyDistribution
 // NEU: Use Case basierte Feldtypen 
 type FieldType = 
   // Basis-Felder (verwendet in mehreren Use Cases)
-  | "name" | "vorname" | "nachname" | "geschlecht" | "alter" | "email" | "telefon" | "Date" | "Integer" 
+  | "name" | "vorname" | "nachname" | "geschlecht" | "alter" | "email" | "telefon" | "Date" | "Integer" | ""
   
   // Gesundheitswesen Use Case
 
@@ -65,7 +65,7 @@ export type Row = {
 const makeDefaultRow = (): Row => ({
   id: `${Date.now()}-${Math.random()}`,
   name: "",
-  type: "name",
+  type: "",
   dependency: "",
   distributionConfig: {
     distribution: "",
