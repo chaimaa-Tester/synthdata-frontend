@@ -6,10 +6,10 @@ type FieldType =
   | "name" | "vorname" | "nachname" | "geschlecht" | "alter" | "email" | "telefon" | "Date" | "Integer" 
   // Gesundheitswesen Use Case
 
-  | "körpergröße" | "gewicht" | "Body-Mass-Index" | "gewichtdiagnose" 
+  | "körpergröße" | "gewicht" | "Body-Mass-Index" | "gewichtdiagnose" | "temperatur"
   // Finanzwesen Use Case
 
-  | "kontonummer" | "transaktionsdatum" | "transaktionsart" | "betrag"
+  | "kundenname" | "kontonummer" | "transaktionsdatum" | "transaktionsart" | "betrag"
 
   // Containerlogistik Use Case
   | "unitName" | "timeIn" | "timeOut" | "attributeSizes" | "attributeStatus"
@@ -69,7 +69,8 @@ export const useCases: UseCase[] = [
       { value: "körpergröße", label: "Körpergröße" },
       { value: "gewicht", label: "Gewicht" },
       { value: "Body-Mass-Index", label: "BMI" },
-      { value: "gewichtdiagnose", label: "Gewichtsdianose" }
+      { value: "gewichtdiagnose", label: "Gewichtsdianose" },
+      { value: "temperatur", label: "Temperatur" }
     ]
   },
   // Finanzwesen Use Case
@@ -79,7 +80,7 @@ export const useCases: UseCase[] = [
     description: "Transaktionen, Konten, Zahlungen",
     icon: "💰",
     fields: [
-      { value: "name", label: "Kundenname" },
+      { value: "kundenname", label: "Kundenname" },
       { value: "Integer", label: "Kontonummer" },
       { value: "Date", label: "Transaktionsdatum" },
       { value: "email", label: "E-Mail" },

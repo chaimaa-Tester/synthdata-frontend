@@ -31,12 +31,12 @@ type FieldType =
   
   // Gesundheitswesen Use Case
 
-  | "körpergröße" | "gewicht" | "Body-Mass-Index" | "gewichtdiagnose" 
+  | "körpergröße" | "gewicht" | "Body-Mass-Index" | "gewichtdiagnose" | "temperatur"
 
   // Finanzwesen Use Case
 
 
-  | "kontonummer" | "transaktionsdatum" | "transaktionsart" | "betrag"
+  | "kundenname" | "kontonummer" | "transaktionsdatum" | "transaktionsart" | "betrag"
 
   // Containerlogistik Use Case
 
