@@ -1,4 +1,7 @@
 import { useMemo, useState } from "react";
+interface SynthDataWizardProps {
+  profileId: string;
+}
 import axios from "axios";
 import logo from "./assets/logo.png";
 import { DistributionModal } from "./components/DistributionModal";
@@ -22,6 +25,9 @@ import {
   verticalListSortingStrategy,
   arrayMove,
 } from "@dnd-kit/sortable";
+
+
+
 
 // -------------------- Typen & Helpers --------------------
 
@@ -55,12 +61,13 @@ const makeDefaultRow = (): Row => ({
 
 // -------------------- Komponente --------------------
 
-export const SynthDataWizard = () => {
+export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({ profileId }) => {
   const [rows, setRows] = useState<Row[]>([
     makeDefaultRow(),
     makeDefaultRow(),
     makeDefaultRow(),
   ]);
+  console.log("Aktives Profil:", profileId);
 
   // States
   const [rowCount, setRowCount] = useState<number>(10);
