@@ -6,10 +6,10 @@ type FieldType =
   | "name" | "vorname" | "nachname" | "geschlecht" | "alter" | "email" | "telefon" | "Date" | "Integer" 
   // Gesundheitswesen Use Case
 
-  | "körpergröße" | "gewicht" | "Body-Mass-Index" | "gewichtdiagnose" | "temperatur"
+| "größe_m" | "gewicht" | "Body-Mass-Index" | "gewichtdiagnose" | "blutgruppe" | "herzfrequenz" | "blutdrucksystolisch" | "temperatur_C" |"status"|"rauchen"|"allergien"|"diabetes"|"kreatinin_mg\/dl"|"glomeruläre Filtrationsrate"|"spO2_%"|"puls"
   // Finanzwesen Use Case
 
-  | "kundenname" | "kontonummer" | "transaktionsdatum" | "transaktionsart" | "betrag"
+  | "kontonummer" | "transaktionsdatum" | "transaktionsart" | "betrag"
 
   // Containerlogistik Use Case
   | "unitName" | "timeIn" | "timeOut" | "attributeSizes" | "attributeStatus"
@@ -66,11 +66,23 @@ export const useCases: UseCase[] = [
       { value: "geschlecht", label: "Geschlecht" },
       { value: "alter", label: "Alter" },
       { value: "Date", label: "Geburtsdatum" },
-      { value: "körpergröße", label: "Körpergröße" },
+      { value: "größe_m", label: "Größe" },
       { value: "gewicht", label: "Gewicht" },
       { value: "Body-Mass-Index", label: "BMI" },
-      { value: "gewichtdiagnose", label: "Gewichtsdianose" },
-      { value: "temperatur", label: "Temperatur" }
+      { value: "gewichtdiagnose", label: "Gewichtsdianose"}, 
+      { value: "blutgruppe", label: "Blutgruppe" },
+      { value: "herzfrequenz", label: "Herzfrequenz" },
+      { value: "blutdrucksystolisch", label: "Blutdruck" },
+      { value: "temperatur_C", label: "Körpertemperatur" },
+      { value: "status", label: "Patientenstatus" },
+      { value: "rauchen", label: "Raucher" },
+      { value: "allergien", label: "Allergien" },
+      { value: "diabetes", label: "Diabetes" },
+      { value: "kreatinin_mg\/dl", label: "Kreatinin" }
+      ,{ value: "glomeruläre Filtrationsrate", label: "GFR" },
+      { value: "spO2_%", label: "Sauerstoffsättigung" }
+      ,{ value: "puls", label: "Puls" }
+
     ]
   },
   // Finanzwesen Use Case
@@ -80,7 +92,7 @@ export const useCases: UseCase[] = [
     description: "Transaktionen, Konten, Zahlungen",
     icon: "💰",
     fields: [
-      { value: "kundenname", label: "Kundenname" },
+      { value: "name", label: "Kundenname" },
       { value: "Integer", label: "Kontonummer" },
       { value: "Date", label: "Transaktionsdatum" },
       { value: "email", label: "E-Mail" },
