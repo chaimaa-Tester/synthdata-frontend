@@ -6,6 +6,7 @@ export const FieldRow = ({
   onChange,
   onOpenModal,
   onCustomDraw,
+  onOpenUploadModal,
   handleDeleteRow,
   allFieldNames,
   dragHandleProps,
@@ -15,6 +16,7 @@ export const FieldRow = ({
   onChange: (idx: number, field: string, value: any) => void;
   onOpenModal: (idx: number) => void;
   onCustomDraw: (idx: number) => void;
+  onOpenUploadModal: (idx:number) => void;
   handleDeleteRow: (idx: number) => void;
   allFieldNames: string[];
   dragHandleProps?: any;
@@ -222,7 +224,17 @@ export const FieldRow = ({
           }}
           onClick={() => onOpenModal(idx)}
         >
-          Verteilung spezifizieren
+          Standard-Verteilung
+        </button>
+        <button
+          className="btn me-3"
+          style={{
+            backgroundColor: "rgb(115, 67, 131)",
+            color: "white",
+          }}
+          onClick={() => onOpenUploadModal(idx)}
+        >
+          Verteilung berechnen
         </button>
         <button
           type="button"

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import axios from "axios";
 import logo from "./assets/logo.png";
 import { DistributionModal } from "./components/DistributionModal";
+import { FileUploadModal } from "./components/FileUploadModal";
 // import FieldRow from sortable wrapper statt direkter FieldRow
 import { SortableFieldRow } from "./components/SortableFieldRow"; // <-- GEÄNDERT: Sortable wrapper import
 import { FieldTableHeader } from "./components/FieldTableHeader";
@@ -67,6 +68,7 @@ export const SynthDataWizard = () => {
   const [format, setFormat] = useState<string>("CSV");
   const [lineEnding, setLineEnding] = useState<string>("Windows(CRLF)");
   const [showModal, setShowModal] = useState<boolean>(false);
+  const [showUploadModal, setShowUploadModal] = useState<boolean>(false);
   const [activeRowIdx, setActiveRowIdx] = useState<number | null>(null);
   // State for custom draw modal
   const [showCustomDraw, setShowCustomDraw] = useState<boolean>(false);
@@ -124,6 +126,16 @@ export const SynthDataWizard = () => {
     setShowModal(false);
     setActiveRowIdx(null);
   };
+
+  const openUploadModal = (idx:number) => {
+    setActiveRowIdx(idx)
+    setShowUploadModal(true)
+  }
+
+  const closeUploadModal = () => {
+    setShowUploadModal(false)
+    setActiveRowIdx(null)
+  }
 
   const handleSaveDistribution = (distributionData: any) => {
     if (activeRowIdx === null) return;
@@ -211,6 +223,7 @@ export const SynthDataWizard = () => {
               handleDeleteRow={handleDeleteRow}
               allFieldNames={allFieldNames}
               onCustomDraw={() => handleCustomDraw(idx)}
+              onOpenUploadModal={() => openUploadModal(idx)}
             />
           ))}
         </SortableContext>
@@ -225,6 +238,17 @@ export const SynthDataWizard = () => {
           initialData={rows[activeRowIdx].distributionConfig}
           fieldType={rows[activeRowIdx].type}
           allFieldNames={allFieldNames}
+        />
+      )}
+
+      {/* Upload Modal */}
+      {activeRowIdx !== null && (
+        <FileUploadModal
+          show={showUploadModal}
+          onClose={closeUploadModal}
+          onSave={handleSaveDistribution}
+          initialData={rows[activeRowIdx].distributionConfig}
+          fieldType={rows[activeRowIdx].type}
         />
       )}
 
