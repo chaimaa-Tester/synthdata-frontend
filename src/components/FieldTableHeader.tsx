@@ -15,13 +15,13 @@
 export const FieldTableHeader = () => (
   <div
     className="row mb-2 fw-bold flex-nowrap"
-    style={{ minWidth: 1200 }}
+    style={{ minWidth: 1400 }}
   >
     <div className="col-auto px-2"></div>
     <div className="col-2 px-3">Feldname</div>
     <div className="col-2 px-3">Feldtyp</div>
     <div className="col-2 px-3">Abhängigkeit</div>
-    <div className="col-1 px-5">Verteilung</div>
+    <div className="col-3 px-3">Verteilung</div>
     <div className="col-auto px-2"></div>
   </div>
 );
