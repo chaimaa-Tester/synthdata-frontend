@@ -112,7 +112,7 @@ export const FieldRow: React.FC<Props> = ({
       <div className="col-2">
         <input
           className="form-control"
-          value={row.type || "Feldtyp wählen"}
+          value={getLabelForType(row.type) || "Feldtyp wählen"}
           readOnly
           onClick={() => setShowUseCaseModal(true)}
           style={{
