@@ -20,9 +20,9 @@ export const FieldRow: React.FC<Props> = ({
   idx,
   onChange,
   onOpenModal,
-  onOpenDependencyModal,
-  onOpenUploadModal,
   onCustomDraw,
+  onOpenUploadModal,
+  onOpenDependencyModal,
   handleDeleteRow,
   allFieldNames,
   dragHandleProps,
@@ -116,7 +116,7 @@ export const FieldRow: React.FC<Props> = ({
       <div className="col-2">
         <input
           className="form-control"
-          value={getLabelForType(row.type) || "Feldtyp wählen"}
+          value={getLabelForType(row.type)}
           readOnly
           onClick={() => setShowUseCaseModal(true)}
           style={{
@@ -253,15 +253,10 @@ export const FieldRow: React.FC<Props> = ({
           Verteilung berechnen
         </button>
         <button
-          type="button"
+          className="btn me-3"
           style={{
             backgroundColor: "#4b0082",
             color: "white",
-            marginLeft: "8px",
-            padding: "6px 12px",
-            borderRadius: "6px",
-            border: "none",
-            cursor: "pointer",
           }}
           onClick={() => onCustomDraw(idx)}
         >

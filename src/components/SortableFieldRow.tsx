@@ -11,7 +11,9 @@ export type SortableFieldRowProps = {
   idx: number;
   onChange: (idx: number, field: string, value: any) => void;
   onOpenModal: (idx: number) => void;
-  onOpenDependencyModal?: (idx: number) => void;
+  onCustomDraw: (idx:number) => void;
+  onOpenUploadModal: (idx:number) => void;
+  onOpenDependencyModal: (idx: number) => void;
   handleDeleteRow: (idx: number) => void;
   allFieldNames: string[];
   dragHandleProps?: any;
