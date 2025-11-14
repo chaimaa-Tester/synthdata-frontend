@@ -7,6 +7,7 @@ type Props = {
   idx: number;
   onChange: (idx: number, field: string, value: any) => void;
   onOpenModal: (idx: number) => void;
+  onCustomDraw: (idx: number) => void;
   onOpenDependencyModal?: (idx: number) => void;
   handleDeleteRow: (idx: number) => void;
   allFieldNames: string[];
@@ -19,6 +20,7 @@ export const FieldRow: React.FC<Props> = ({
   onChange,
   onOpenModal,
   onOpenDependencyModal,
+  onCustomDraw,
   handleDeleteRow,
   allFieldNames,
   dragHandleProps,
@@ -237,6 +239,21 @@ export const FieldRow: React.FC<Props> = ({
           title="Verteilung und Parameter konfigurieren"
         >
           Standard-Verteilung
+        </button>
+        <button
+          type="button"
+          style={{
+            backgroundColor: "#4b0082",
+            color: "white",
+            marginLeft: "8px",
+            padding: "6px 12px",
+            borderRadius: "6px",
+            border: "none",
+            cursor: "pointer",
+          }}
+          onClick={() => onCustomDraw(idx)}
+        >
+          🎨 Eigene Verteilung zeichnen
         </button>
 
         <button

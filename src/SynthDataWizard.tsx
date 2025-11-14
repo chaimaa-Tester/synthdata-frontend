@@ -1,4 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect } from "react";
+import { useMemo, useState, useRef } from "react";
+interface SynthDataWizardProps {
+  profileId: string;
+}
 import axios from "axios";
 import logo from "./assets/logo.png";
 import { DistributionModal } from "./components/DistributionModal";
@@ -6,6 +10,8 @@ import { SortableFieldRow } from "./components/SortableFieldRow";
 import { FieldTableHeader } from "./components/FieldTableHeader";
 import { ExportOptions } from "./components/ExportOptions";
 import { useCases, FieldType } from "./types/fieldTypes";
+import { CustomDistributionCanvas } from "./components/CustomDistributionCanvas";
+
 // NEU: dnd-kit imports
 import {
   DndContext,
@@ -20,6 +26,9 @@ import {
   verticalListSortingStrategy,
   arrayMove,
 } from "@dnd-kit/sortable";
+
+
+
 import { DependencyDistributionModal } from "./components/DependencyDistributionModal";
 
 // -------------------- Typen & Helpers --------------------
@@ -66,18 +75,37 @@ const makeDefaultRow = (): Row => ({
 
 // -------------------- Komponente --------------------
 
-export const SynthDataWizard = () => {
+export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({ profileId }) => {
   const [rows, setRows] = useState<Row[]>([
     makeDefaultRow(),
     makeDefaultRow(),
     makeDefaultRow(),
   ]);
+  console.log("Aktives Profil:", profileId);
 
+  // States
   const [rowCount, setRowCount] = useState<number>(10);
   const [format, setFormat] = useState<string>("CSV");
   const [lineEnding, setLineEnding] = useState<string>("Windows(CRLF)");
   const [showModal, setShowModal] = useState<boolean>(false);
   const [activeRowIdx, setActiveRowIdx] = useState<number | null>(null);
+  // State for custom draw modal
+  const [showCustomDraw, setShowCustomDraw] = useState<boolean>(false);
+  const [activeFieldIndex, setActiveFieldIndex] = useState<number | null>(null);
+  // Handler for opening custom draw modal
+  const handleCustomDraw = (idx: number) => {
+    setActiveFieldIndex(idx);
+    setShowCustomDraw(true);
+  };
+
+  // Handler for saving from custom draw modal
+  const handleCustomDrawSave = (data: any) => {
+    // Log the data
+    console.log("Custom distribution saved:", data);
+    setShowCustomDraw(false);
+    setActiveFieldIndex(null);
+  };
+
   const sensors = useSensors(useSensor(PointerSensor));
   const [showDepModal, setShowDepModal] = useState(false);
   const [depModalRowIdx, setDepModalRowIdx] = useState<number | null>(null);
@@ -325,6 +353,62 @@ export const SynthDataWizard = () => {
     return Array.from(new Set(names));
   }, [rows]);
 
+  // ===================== Profileinstellungen speichern & laden =====================
+
+  // Beim Laden: vorhandene Einstellungen aus dem Backend holen
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        const res = await axios.get(`http://localhost:8000/profiles/${profileId}/data`);
+        if (res.data?.data) {
+          const d = res.data.data;
+          if (d.rows) setRows(d.rows);
+          if (d.rowCount) setRowCount(d.rowCount);
+          if (d.format) setFormat(d.format);
+          if (d.lineEnding) setLineEnding(d.lineEnding);
+        }
+      } catch (err) {
+        console.error("Fehler beim Laden der Profildaten:", err);
+      }
+    };
+    if (profileId) fetchProfileData();
+  }, [profileId]);
+
+  // NEU: State für letzten Speicherzeitpunkt
+  // Letzter Speicherzeitpunkt
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  // Ref für den letzten gespeicherten JSON-String
+  const lastSavedDataRef = useRef<string>("");
+
+  // Beim Ändern: automatisch speichern mit Debounce und Vergleich
+  useEffect(() => {
+    if (!profileId) return;
+
+    const currentData = JSON.stringify({ rows, rowCount, format, lineEnding });
+    if (currentData === lastSavedDataRef.current) {
+      // Keine Änderung seit letztem Speichern
+      return;
+    }
+
+    const timeout = setTimeout(async () => {
+      try {
+        await axios.post(`http://localhost:8000/profiles/${profileId}/data`, {
+          rows,
+          rowCount,
+          format,
+          lineEnding,
+        });
+        lastSavedDataRef.current = currentData;
+        setLastSaved(new Date());
+        console.log(" Profil-Daten gespeichert");
+      } catch (err) {
+        console.error("Fehler beim Speichern der Profildaten:", err);
+      }
+    }, 1000); // speichert nach 1 Sekunde Inaktivität
+
+    return () => clearTimeout(timeout);
+  }, [rows, rowCount, format, lineEnding, profileId]);
+
   return (
     <div
       className="px-5 py-5 text-white"
@@ -369,6 +453,7 @@ export const SynthDataWizard = () => {
               onOpenDependencyModal={() => handleOpenDependencyModal(idx)}
               handleDeleteRow={handleDeleteRow}
               allFieldNames={allFieldNames}
+              onCustomDraw={() => handleCustomDraw(idx)}
             />
           ))}
         </SortableContext>
@@ -431,6 +516,53 @@ export const SynthDataWizard = () => {
         </button>
         
       </div>
+      {/* Anzeige des letzten Speicherzeitpunkts */}
+      <div className="mt-2" style={{ color: "#ccc", fontSize: "0.9em" }}>
+        {lastSaved ? `Zuletzt gespeichert: ${lastSaved.toLocaleTimeString()}` : "Noch nicht gespeichert"}
+      </div>
+      {/* Custom Distribution Modal */}
+      {showCustomDraw && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(0,0,0,0.6)",
+            zIndex: 2000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            style={{
+              background: "#22304f",
+              padding: "32px 24px",
+              borderRadius: "16px",
+              minWidth: 350,
+              boxShadow: "0 8px 32px rgba(0,0,0,0.25)"
+            }}
+          >
+            <CustomDistributionCanvas
+              onSave={handleCustomDrawSave}
+              // Weitere relevante Props je nach Bedarf
+            />
+            <div style={{ marginTop: 16, textAlign: "right" }}>
+              <button
+                className="btn btn-outline-light"
+                onClick={() => {
+                  setShowCustomDraw(false);
+                  setActiveFieldIndex(null);
+                }}
+              >
+                Abbrechen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
