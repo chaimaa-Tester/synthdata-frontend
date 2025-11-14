@@ -1,18 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { UseCaseModal } from "./UseCaseModal";
+import { getLabelForType } from "../types/fieldTypes";
 
-// FieldType wird jetzt im UseCaseModal definiert
-
-export const FieldRow = ({
-  row,
-  idx,
-  onChange,
-  onOpenModal,
-  onOpenDependencyModal,
-  handleDeleteRow,
-  allFieldNames,
-  dragHandleProps,
-}: {
+type Props = {
   row: any;
   idx: number;
   onChange: (idx: number, field: string, value: any) => void;
@@ -21,6 +11,17 @@ export const FieldRow = ({
   handleDeleteRow: (idx: number) => void;
   allFieldNames: string[];
   dragHandleProps?: any;
+};
+
+export const FieldRow: React.FC<Props> = ({
+  row,
+  idx,
+  onChange,
+  onOpenModal,
+  onOpenDependencyModal,
+  handleDeleteRow,
+  allFieldNames,
+  dragHandleProps,
 }) => {
   const parseDeps = (text: string): string[] =>
     (text || "")
@@ -111,7 +112,7 @@ export const FieldRow = ({
       <div className="col-2">
         <input
           className="form-control"
-          value="Feldtyp"
+          value={getLabelForType(row.type) || ""}
           readOnly
           onClick={() => setShowUseCaseModal(true)}
           style={{ cursor: "pointer" }}

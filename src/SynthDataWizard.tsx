@@ -5,7 +5,7 @@ import { DistributionModal } from "./components/DistributionModal";
 import { SortableFieldRow } from "./components/SortableFieldRow";
 import { FieldTableHeader } from "./components/FieldTableHeader";
 import { ExportOptions } from "./components/ExportOptions";
-import { useCases } from "./components/UseCaseModal"
+import { useCases, FieldType } from "./types/fieldTypes";
 // NEU: dnd-kit imports
 import {
   DndContext,
@@ -24,34 +24,19 @@ import { DependencyDistributionModal } from "./components/DependencyDistribution
 
 // -------------------- Typen & Helpers --------------------
 
-// NEU: Use Case basierte Feldtypen 
-type FieldType = 
-  // Basis-Felder (verwendet in mehreren Use Cases)
-  | "name" | "vorname" | "nachname" | "geschlecht" | "alter" | "email" | "telefon" | "Date" | "Integer" 
-  
-  // Gesundheitswesen Use Case
-
-  | "körpergröße" | "gewicht" | "Body-Mass-Index" | "gewichtdiagnose" 
-
-  // Finanzwesen Use Case
-
-
-  | "kontonummer" | "transaktionsdatum" | "transaktionsart" | "betrag"
-
-  // Containerlogistik Use Case
-
-  | "unitName" | "timeIn" | "timeOut" | "attributeSizes" | "attributeStatus"
-  
-  | "attributeWeights" | "attributeDirections" | "inboundCarrierId" 
-  
-  | "outboundCarrierId" | "serviceId" | "linerId";
-
 // Use Cases werden jetzt im UseCaseModal verwaltet
 
 export type Row = {
   id: string;
+  // 'name' ist der frei editierbare Feldname (z.B. "vorname", "email" oder beliebiger Label).
+  // Wichtig: Der Name wird hauptsächlich zur Anzeige und als Referenz für Abhängigkeiten verwendet,
+  // nicht um das Verhalten/UseCase zu bestimmen.
   name: string;
+  // 'type' ist der FELDTYP und bestimmt das Verhalten, die verfügbaren Verteilungen
+  // und welche UseCase-ID später verwendet wird. Der Typ ist die entscheidende Information
+  // für Logik/Export, nicht der Name.
   type: FieldType; //  NEU: Erweiterte Feldtypen
+  // 'dependency' speichert gegebenenfalls den Namen eines anderen Feldes, von dem dieses Feld abhängt.
   dependency: string;
   distributionConfig: {
     distribution: string;
@@ -64,7 +49,10 @@ export type Row = {
 
 const makeDefaultRow = (): Row => ({
   id: `${Date.now()}-${Math.random()}`,
+  // Standardname leer: der User kann hier beliebigen Text eingeben.
+  // Das ist bewusst so - es gibt keine harte Validierung des Namens bei der Eingabe.
   name: "",
+  // Standard-Feldtyp ist "name" (dies beeinflusst z.B. welche UseCase-ID genommen wird).
   type: "name",
   dependency: "",
   distributionConfig: {
@@ -111,6 +99,9 @@ export const SynthDataWizard = () => {
   const handleAddRow = () =>
     setRows((prev) => [...prev, makeDefaultRow()]);
 
+  // Beim Ändern einer Zelle werden die Werte direkt in 'rows' gesetzt.
+  // KEINE Validierung des Feldnamens hier — der User kann beliebigen Text im 'name' eingeben.
+  // Entscheidend für das Verhalten ist weiterhin 'type'.
   const handleRowChange = (idx: number, field: string, value: any) => {
     setRows((prev) => {
       const next = [...prev];
@@ -142,6 +133,7 @@ export const SynthDataWizard = () => {
         distributionConfig: { 
           ...distributionData,
         },
+        // Falls die Distribution eine Abhängigkeit enthält, speichern wir diese auch als top-level 'dependency'
         dependency:
           distributionData?.dependency ?? next[activeRowIdx].dependency ?? "",
       };
@@ -152,12 +144,18 @@ export const SynthDataWizard = () => {
   };
 
   const handleOpenDependencyModal = (rowIdx: number) => {
+    // Die Abhängigkeit wird über den FELDNAMEN referenziert (nicht über den Feldtyp).
+    // Hier wird aus dem dependency-String der erste Name extrahiert — dieser Name muss
+    // mit einem existierenden rows[].name übereinstimmen, damit die Abhängigkeit funktioniert.
     const depRaw = (rows[rowIdx].dependency || "").split(",")[0]?.trim() || "";
     if (!depRaw) {
       alert("Bitte zuerst eine Abhängigkeit wählen.");
       return;
     }
+    // Suche das Zielfeld per Name
     const targetIdx = rows.findIndex((r) => r.name === depRaw);
+    // Für das Modal geben wir neben dem Namen auch den Typ des Targets mit — der Typ bestimmt dann,
+    // welche Verteilungen für das Ziel sinnvoll sind (z.B. 'geschlecht' hat Wahrscheinlichkeiten).
     const targetType = targetIdx !== -1 ? rows[targetIdx].type : "";
     setDepModalRowIdx(rowIdx);
     setDepTargetName(depRaw);
@@ -181,8 +179,10 @@ export const SynthDataWizard = () => {
     }
     setRows((prev) => {
       const next = [...prev];
+      // Ziel wird per FELDNAME gefunden
       const targetIdx = next.findIndex((r) => r.name === depTargetName);
       if (targetIdx !== -1) {
+        // Auf dem Ziel-Feld die Konfiguration ergänzen
         next[targetIdx] = {
           ...next[targetIdx],
           distributionConfig: {
@@ -190,9 +190,8 @@ export const SynthDataWizard = () => {
             ...distConfig,
           },
         };
-        // Ensure that any row which requested this dependency actually records
-        // the dependency at top-level (so export and backend get the correct
-        // dependency column name). depModalRowIdx is the requesting row.
+        // Und sicherstellen, dass das anfragende Feld die dependency als Namen recorded.
+        // WICHTIG: die Verknüpfung zwischen Feldern läuft über Namen, nicht über Typen.
         if (depModalRowIdx !== null && next[depModalRowIdx]) {
           next[depModalRowIdx] = {
             ...next[depModalRowIdx],
@@ -200,14 +199,14 @@ export const SynthDataWizard = () => {
           };
         }
       } else if (depModalRowIdx !== null) {
-        // Fallback: wenn Target nicht gefunden, speichere beim anfragenden Row
+        // Fallback: wenn Zielname nicht existiert, speichern wir die Konfig beim anfragenden Row
         next[depModalRowIdx] = {
           ...next[depModalRowIdx],
           distributionConfig: {
             ...next[depModalRowIdx].distributionConfig,
             ...distConfig,
           },
-          // Also ensure the dependency name is set explicitly when saving here
+          // Auch hier wird die Abhängigkeit als Name gespeichert.
           dependency: depTargetName || next[depModalRowIdx].dependency,
         };
       }
@@ -222,16 +221,20 @@ export const SynthDataWizard = () => {
     const nameLike: FieldType[] = ["name", "vorname", "nachname"];
     for (const r of rowsToCheck) {
       if (nameLike.includes(r.type)) {
+        // Für bestimmte FELDTYPEN erwarten wir eine Abhängigkeit (z.B. 'geschlecht').
+        // Die Abhängigkeit wird über den FELDNAMEN angegeben und geprüft.
         const depRaw = (r.dependency || "").split(",")[0]?.trim() || "";
         if (!depRaw) {
           errors.push(`Feld '${r.name || "(kein Name)"}' vom Typ '${r.type}' hat keine Abhängigkeit definiert.`);
           continue;
         }
+        // Suche Ziel per Name
         const target = rowsToCheck.find((t) => t.name === depRaw);
         if (!target) {
           errors.push(`Feld '${r.name || "(kein Name)"}' hängt von '${depRaw}', dieses Feld existiert aber nicht.`);
           continue;
         }
+        // Der Typ des Ziel-Feldes muss 'geschlecht' sein — hier entscheidet sich wieder der FELDTYP.
         if (target.type !== "geschlecht") {
           errors.push(`Feld '${r.name || "(kein Name)"}' hängt von '${depRaw}', hat aber Typ '${target.type}' (erwartet 'geschlecht').`);
         }
@@ -240,14 +243,24 @@ export const SynthDataWizard = () => {
     return errors;
   };
 
+  // Diese Funktion mappt einen FELDTYP (type) auf die passende UseCase-ID.
+  // WICHTIG: Hier wird ausschliesslich 'type' (nicht 'name') verwendet, um zu entscheiden,
+  // welche UseCase(s) für den Export relevant sind.
   const getUseCaseIdForFieldType = (fieldType: FieldType): string | null => {
     for (const uc of useCases) {
-      if (uc.fields.some(field => field.value === fieldType)) {
+      if (uc.fields && uc.fields.some((field: any) => field.value === fieldType)) {
         return uc.id;
+      }
+      if (uc.fieldGroups) {
+        for (const g of uc.fieldGroups) {
+          if (g.fields.some((field: any) => field.value === fieldType)) {
+            return uc.id;
+          }
+        }
       }
     }
     return null;
-  }
+  };
 
 
   const handleExport = async () => {
@@ -260,6 +273,9 @@ export const SynthDataWizard = () => {
       }
 
       // Hinzufügen der Use Case ID zum Export-Objekt
+      // Hier werden ALLE Feldtypen gesammelt und dann auf UseCase-IDs gemappt.
+      // Das bedeutet: selbst wenn der Benutzer dem Feld einen beliebigen Namen gegeben hat,
+      // entscheidet der FELDTYP (rows[].type) welche UseCases gebraucht werden.
       const allFieldTypes = rows.map(row => row.type)
 
       // Filtern der eindeutigen Use Case IDs, die tatsächlich verwendet werden
@@ -304,6 +320,8 @@ export const SynthDataWizard = () => {
   };
 
   // Alle aktuell eingegebenen Feldnamen (ohne leere) → für das Dropdown
+  // Hinweis: Das Dropdown zeigt FELDNAMEN zur Auswahl an (z.B. für Dependencies).
+  // Diese Liste dient rein zur Auswahl/Anzeige — die eigentliche Logik nutzt den FELDTYP.
   const allFieldNames = useMemo(() => {
     const names = rows
       .map((r) => (r.name || "").trim())
@@ -416,7 +434,6 @@ export const SynthDataWizard = () => {
           Exportieren
         </button>
         
-        {/* Aktive Nationalitäten Anzeige entfernt auf Wunsch */}
       </div>
     </div>
   );

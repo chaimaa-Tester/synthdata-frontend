@@ -1,30 +1,6 @@
 import React, { useState } from "react";
-
-// Wichtig : Nur die tatsächlich in Use Cases verwendeten Feldtypen
-type FieldType = 
-  // Basis-Felder (verwendet in mehreren Use Cases)
-  | "name" | "vorname" | "nachname" | "geschlecht" | "alter" | "email" | "telefon" | "Date" | "Integer" 
-  // Gesundheitswesen Use Case
-
-  | "körpergröße" | "gewicht" | "Body-Mass-Index" | "gewichtdiagnose" 
-  // Finanzwesen Use Case
-
-  | "kontonummer" | "transaktionsdatum" | "transaktionsart" | "betrag"
-
-  // Containerlogistik Use Case
-  | "unitName" | "timeIn" | "timeOut" | "attributeSizes" | "attributeStatus"
-  
-  | "attributeWeights" | "attributeDirections" | "inboundCarrierId" 
-  
-  | "outboundCarrierId" | "serviceId" | "linerId";
-
-type UseCase = {
-  id: string;
-  label: string;
-  description: string;
-  icon: string;
-  fields: { value: FieldType; label: string }[];
-};
+import { useCases, FieldType } from "../types/fieldTypes";
+import { Tooltip } from "./Tooltip";
 
 type UseCaseModalProps = {
   show: boolean;
@@ -32,67 +8,19 @@ type UseCaseModalProps = {
   onSelectField: (fieldType: FieldType) => void;
 };
 
-export const useCases: UseCase[] = [
-  // Containerlogistik Use Case
-  {
-    id: "containerlogistik",
-    label: "Containerlogistik",
-    description: "Container-Transport, Häfen, Logistik",
-    icon: "🚢",
-    fields: [
-      { value: "unitName", label: "Containereinheit" },
-      { value: "timeIn", label: "Ankunftszeit" },
-      { value: "timeOut", label: "Abfahrtszeit" },
-      { value: "attributeSizes", label: "Containergröße" },
-      { value: "attributeStatus", label: "Status" },
-      { value: "attributeWeights", label: "Gewicht" },
-      { value: "attributeDirections", label: "Richtung (Import/Export)" },
-      { value: "inboundCarrierId", label: "Eingehendes Transportmittel" },
-      { value: "outboundCarrierId", label: "Ausgehendes Transportmittel" },
-      { value: "serviceId", label: "Dienst-ID" },
-      { value: "linerId", label: "Reederei-ID" }
-    ]
-  },
-  // Gesundheitswesen Use Case
-  {
-    id: "gesundheit",
-    label: "Gesundheitswesen",
-    description: "Patienten, Diagnosen, Behandlungen",
-    icon: "🏥",
-    fields: [
-      { value: "name", label: "Patientenname" },
-      { value: "vorname", label: "Vorname" },
-      { value: "nachname", label: "Nachname" },
-      { value: "geschlecht", label: "Geschlecht" },
-      { value: "alter", label: "Alter" },
-      { value: "Date", label: "Geburtsdatum" },
-      { value: "körpergröße", label: "Körpergröße" },
-      { value: "gewicht", label: "Gewicht" },
-      { value: "Body-Mass-Index", label: "BMI" },
-      { value: "gewichtdiagnose", label: "Gewichtsdianose" }
-    ]
-  },
-  // Finanzwesen Use Case
-  {
-    id: "finanzen",
-    label: "Finanzwesen",
-    description: "Transaktionen, Konten, Zahlungen",
-    icon: "💰",
-    fields: [
-      { value: "name", label: "Kundenname" },
-      { value: "Integer", label: "Kontonummer" },
-      { value: "Date", label: "Transaktionsdatum" },
-      { value: "email", label: "E-Mail" },
-      { value: "telefon", label: "Telefon" },
-      { value: "transaktionsart", label: "Transaktionsart" },
-      { value: "betrag", label: "Betrag" }
-    ]
-  }
-];
-
 export const UseCaseModal: React.FC<UseCaseModalProps> = ({ show, onClose, onSelectField }) => {
   const [selectedUseCase, setSelectedUseCase] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeGroup, setActiveGroup] = useState<"container" | "carrier">("container");
+
+  // Reset modal internals when opened/closed
+  React.useEffect(() => {
+    if (!show) {
+      setSelectedUseCase(null);
+      setSearchTerm("");
+      setActiveGroup("container");
+    }
+  }, [show]);
 
   if (!show) return null;
 
@@ -112,11 +40,27 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({ show, onClose, onSel
     setSearchTerm("");
   };
 
-  const selectedUseCaseData = useCases.find(uc => uc.id === selectedUseCase);
-  
-  const filteredFields = selectedUseCaseData?.fields.filter(field => 
+  const selectedUseCaseData = useCases.find((uc) => uc.id === selectedUseCase);
+
+  // Determine which fields to show. If the use case has groups, pick the group's fields
+  let allFields: any[] = [];
+  if (selectedUseCaseData) {
+    // generische Prüfungen: benutze fieldGroups, wenn vorhanden — keine harte ID‑Prüfung
+    if (selectedUseCaseData.fieldGroups && selectedUseCaseData.fieldGroups.length > 0) {
+      const key = activeGroup === "container" ? "container" : "carrier";
+      const found = selectedUseCaseData.fieldGroups.find((g) =>
+        g.groupLabel.toLowerCase().includes(key)
+      );
+      allFields = found?.fields ?? [];
+    } else {
+      allFields = selectedUseCaseData.fields ?? [];
+    }
+  }
+
+  const filteredFields = allFields.filter((field: any) =>
     field.label.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  );
+
 
   return (
     <div
@@ -173,15 +117,17 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({ show, onClose, onSel
                     style={{
                       cursor: "pointer",
                       transition: "all 0.2s",
-                      border: "2px solid #dee2e6"
+                      border: "2px solid #e6e6e6"
                     }}
                     onClick={() => handleUseCaseSelect(useCase.id)}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = "#0d6efd";
-                      e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.1)";
+                      e.currentTarget.style.borderColor = "rgb(115,67,131)"; // violett
+                      e.currentTarget.style.backgroundColor = "#faf5fb";
+                      e.currentTarget.style.boxShadow = "0 6px 16px rgba(115,67,131,0.08)";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = "#dee2e6";
+                      e.currentTarget.style.borderColor = "#e6e6e6";
+                      e.currentTarget.style.backgroundColor = "white";
                       e.currentTarget.style.boxShadow = "none";
                     }}
                   >
@@ -192,7 +138,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({ show, onClose, onSel
                       <h5 className="card-title text-dark">{useCase.label}</h5>
                       <p className="card-text text-muted">{useCase.description}</p>
                       <small className="text-muted">
-                        {useCase.fields.length} Feldtypen verfügbar
+                        {useCase.fields ? useCase.fields.length : (useCase.fieldGroups?.reduce((acc, g) => acc + g.fields.length, 0) ?? 0)} Feldtypen verfügbar
                       </small>
                     </div>
                   </div>
@@ -223,29 +169,77 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({ show, onClose, onSel
             </div>
 
             {/* Felder Liste */}
+            {/* Gruppenumschaltung wenn fieldGroups vorhanden sind */}
+{selectedUseCaseData?.fieldGroups && selectedUseCaseData.fieldGroups.length > 0 && (
+  <div className="d-flex justify-content-center gap-3 mb-4">
+    <button
+      className="btn"
+      onClick={() => setActiveGroup("container")}
+      style={{
+        backgroundColor: activeGroup === "container" ? "rgb(115,67,131)" : "transparent",
+        color: activeGroup === "container" ? "white" : "rgb(34,37,41)",
+        border: "1px solid rgb(115,67,131)",
+        padding: "0.45rem 1rem"
+      }}
+    >
+      📦 Containerdaten
+    </button>
+    <button
+      className="btn"
+      onClick={() => setActiveGroup("carrier")}
+      style={{
+        backgroundColor: activeGroup === "carrier" ? "rgb(115,67,131)" : "transparent",
+        color: activeGroup === "carrier" ? "white" : "rgb(34,37,41)",
+        border: "1px solid rgb(115,67,131)",
+        padding: "0.45rem 1rem"
+      }}
+    >
+      🚢 Carrier / Schiffsdaten
+    </button>
+  </div>
+)}
+
             <div className="row g-2">
               {filteredFields.map((field) => (
                 <div key={field.value} className="col-md-6">
-                  <button
-                    className="btn btn-outline-primary w-100 text-start"
-                    onClick={() => handleFieldSelect(field.value)}
-                    style={{
-                      padding: "0.75rem 1rem",
-                      border: "2px solid #dee2e6",
-                      transition: "all 0.2s"
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = "#0d6efd";
-                      e.currentTarget.style.backgroundColor = "#f8f9fa";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = "#dee2e6";
-                      e.currentTarget.style.backgroundColor = "white";
-                    }}
-                  >
-                    <div className="fw-bold text-dark">{field.label}</div>
-                    <small className="text-muted">{field.value}</small>
-                  </button>
+                  <div style={{ position: "relative" }}>
+                    <button
+                      className="btn btn-outline-primary w-100 text-start"
+                      onClick={() => handleFieldSelect(field.value)}
+                      style={{
+                        padding: "0.75rem 1rem",
+                        border: "2px solid #e6e6e6",
+                        transition: "all 0.2s",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        backgroundColor: "white"
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = "rgb(115,67,131)";
+                        e.currentTarget.style.backgroundColor = "#fbf2fb";
+                        e.currentTarget.style.boxShadow = "0 6px 12px rgba(115,67,131,0.06)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = "#e6e6e6";
+                        e.currentTarget.style.backgroundColor = "white";
+                        e.currentTarget.style.boxShadow = "none";
+                      }}
+                    >
+                      <div>
+                        <div className="fw-bold text-dark">{field.label}</div>
+                        <small className="text-muted">{field.value}</small>
+                      </div>
+                      {field.tooltip ? (
+                        <div style={{ marginLeft: 12, marginRight: 6 }}>
+                          <Tooltip content={field.tooltip}>
+                            <span style={{ cursor: "help", color: "#6c757d", padding: 6 }}>ⓘ</span>
+                          </Tooltip>
+                        </div>
+                      ) : null}
+                    </button>
+                    {/* no-op: tooltip icon is rendered inside the button via Tooltip */}
+                  </div>
                 </div>
               ))}
             </div>

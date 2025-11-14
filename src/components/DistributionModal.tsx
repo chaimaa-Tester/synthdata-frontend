@@ -194,6 +194,7 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
       case "körpergröße":
       case "gewicht":
       case "float":
+      case "dwelltime":
         return ["uniform", "normal"];
       case "Integer":
       case "integer":
@@ -276,7 +277,7 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
     if (distribution === "poisson") return false;
     if (["name", "vorname", "nachname", "geschlecht", "adresse", "straße", "stadt", "land", "email", "telefon"].includes(fieldType.toLowerCase()) && 
         distribution === "categorical") {
-      return true; // ✅ Bei kategorialen Verteilungen für Namen etc. Parameter B für Gewichte anzeigen
+      return true; //  Bei kategorialen Verteilungen für Namen etc. Parameter B für Gewichte anzeigen
     }
     return true;
   };
@@ -351,7 +352,7 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
             parameterA: data.parameters[0]?.toString() || "",
             parameterB: data.parameters[1]?.toString() || "",
             extraParams: data.parameters.slice(2).map((p: number) => p.toString()),
-            nationality: form.nationality, // ✅ Nationalität beibehalten
+            //nationality: form.nationality, // ✅ Nationalität beibehalten
           });
         }
       })
