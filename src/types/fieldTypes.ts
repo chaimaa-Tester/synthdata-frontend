@@ -14,6 +14,7 @@ export type FieldType =
   | "gewicht"
   | "bmi"
   | "gewichtdiagnose"
+  | ""
 
   // logistik – Containerdaten
   | "unitName"

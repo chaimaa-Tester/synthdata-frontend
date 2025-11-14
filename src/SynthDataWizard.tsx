@@ -63,7 +63,7 @@ const makeDefaultRow = (): Row => ({
   // Das ist bewusst so - es gibt keine harte Validierung des Namens bei der Eingabe.
   name: "",
   // Standard-Feldtyp ist "name" (dies beeinflusst z.B. welche UseCase-ID genommen wird).
-  type: "name",
+  type: "",
   dependency: "",
   distributionConfig: {
     distribution: "",
