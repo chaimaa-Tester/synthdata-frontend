@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect } from "react";
+import { useMemo, useState, useRef } from "react";
 interface SynthDataWizardProps {
   profileId: string;
 }
@@ -178,6 +179,62 @@ export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({ profileId }) =
     return Array.from(new Set(names)); // deduplizieren
   }, [rows]);
 
+  // ===================== Profileinstellungen speichern & laden =====================
+
+  // Beim Laden: vorhandene Einstellungen aus dem Backend holen
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        const res = await axios.get(`http://localhost:8000/profiles/${profileId}/data`);
+        if (res.data?.data) {
+          const d = res.data.data;
+          if (d.rows) setRows(d.rows);
+          if (d.rowCount) setRowCount(d.rowCount);
+          if (d.format) setFormat(d.format);
+          if (d.lineEnding) setLineEnding(d.lineEnding);
+        }
+      } catch (err) {
+        console.error("Fehler beim Laden der Profildaten:", err);
+      }
+    };
+    if (profileId) fetchProfileData();
+  }, [profileId]);
+
+  // NEU: State für letzten Speicherzeitpunkt
+  // Letzter Speicherzeitpunkt
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  // Ref für den letzten gespeicherten JSON-String
+  const lastSavedDataRef = useRef<string>("");
+
+  // Beim Ändern: automatisch speichern mit Debounce und Vergleich
+  useEffect(() => {
+    if (!profileId) return;
+
+    const currentData = JSON.stringify({ rows, rowCount, format, lineEnding });
+    if (currentData === lastSavedDataRef.current) {
+      // Keine Änderung seit letztem Speichern
+      return;
+    }
+
+    const timeout = setTimeout(async () => {
+      try {
+        await axios.post(`http://localhost:8000/profiles/${profileId}/data`, {
+          rows,
+          rowCount,
+          format,
+          lineEnding,
+        });
+        lastSavedDataRef.current = currentData;
+        setLastSaved(new Date());
+        console.log(" Profil-Daten gespeichert");
+      } catch (err) {
+        console.error("Fehler beim Speichern der Profildaten:", err);
+      }
+    }, 1000); // speichert nach 1 Sekunde Inaktivität
+
+    return () => clearTimeout(timeout);
+  }, [rows, rowCount, format, lineEnding, profileId]);
+
   return (
     <div
       className="px-5 py-5 text-white"
@@ -261,6 +318,10 @@ export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({ profileId }) =
         >
           Exportieren
         </button>
+      </div>
+      {/* Anzeige des letzten Speicherzeitpunkts */}
+      <div className="mt-2" style={{ color: "#ccc", fontSize: "0.9em" }}>
+        {lastSaved ? `Zuletzt gespeichert: ${lastSaved.toLocaleTimeString()}` : "Noch nicht gespeichert"}
       </div>
       {/* Custom Distribution Modal */}
       {showCustomDraw && (

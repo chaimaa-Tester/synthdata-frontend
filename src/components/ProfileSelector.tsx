@@ -11,18 +11,34 @@ export const ProfileSelector = ({ onSelect }: { onSelect: (profileId: string) =>
   const [profiles, setProfiles] = useState<Profile[] | null>(null);
   const [newProfileName, setNewProfileName] = useState("");
 
-  useEffect(() => {
+useEffect(() => {
+  const fetchProfiles = async () => {
     try {
+      const response = await fetch("http://localhost:8000/profiles");
+      if (response.ok) {
+        const data = await response.json();
+        setProfiles(data);
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+      } else {
+        const storedProfiles = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (storedProfiles) {
+          setProfiles(JSON.parse(storedProfiles));
+        } else {
+          setProfiles([]);
+        }
+      }
+    } catch (error) {
+      console.error("Fehler beim Laden der Profile:", error);
       const storedProfiles = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (storedProfiles) {
         setProfiles(JSON.parse(storedProfiles));
       } else {
         setProfiles([]);
       }
-    } catch {
-      setProfiles([]);
     }
-  }, []);
+  };
+  fetchProfiles();
+}, []);
 
   useEffect(() => {
     if (profiles !== null) {
@@ -30,23 +46,43 @@ export const ProfileSelector = ({ onSelect }: { onSelect: (profileId: string) =>
     }
   }, [profiles]);
 
-  const createProfile = () => {
+  const createProfile = async () => {
     if (!newProfileName.trim() || profiles === null) return;
-    const newProfile: Profile = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: newProfileName.trim(),
-    };
-    setProfiles((prev) => (prev ? [...prev, newProfile] : [newProfile]));
-    // onSelect(newProfile.id);
-    setNewProfileName("");
+    try {
+      const response = await fetch("http://localhost:8000/profiles", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name: newProfileName.trim() }),
+      });
+      if (!response.ok) {
+        // Fehlerbehandlung (optional)
+        return;
+      }
+      const newProfile = await response.json();
+      setProfiles((prev) => (prev ? [...prev, newProfile] : [newProfile]));
+      setNewProfileName("");
+    } catch (error) {
+      // Fehlerbehandlung (optional)
+    }
   };
 
   // Löschfunktion für Profile
-  const deleteProfile = (id: string) => {
+  const deleteProfile = async (id: string) => {
+    try {
+      // Profil auch im Backend löschen
+      await fetch(`http://localhost:8000/profiles/${id}`, {
+        method: "DELETE",
+      });
+    } catch (error) {
+      console.error("Fehler beim Löschen im Backend:", error);
+    }
+
+    // Lokal entfernen
     setProfiles((prev) => {
       if (!prev) return prev;
       const updated = prev.filter((p) => p.id !== id);
-      // localStorage wird durch useEffect aktualisiert
       return updated;
     });
   };
