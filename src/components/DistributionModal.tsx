@@ -7,7 +7,7 @@ type DistributionModalProps = {
   onSave: (data: any) => void;
   initialData: any;
   fieldType: string;
-  allFieldNames?: string[]; // ✅ hinzugefügt (optional)
+  allFieldNames?: string[];
 };
 
 // Hauptkomponente für das Modal zur Verteilungsspezifikation
@@ -17,7 +17,6 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
   onSave,
   initialData,
   fieldType,
-  //allFieldNames, // optional; wird aktuell nicht verwendet
 }) => {
   if (!show) return null;
 
@@ -55,68 +54,71 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
     setForm({ ...form, extraParams: [...(form.extraParams || []), ""] });
   };
 
-  // Verfügbare Verteilungen nach Feldtyp
+  //  NEU: Verfügbare Verteilungen erweitert für mimesis-Typen
   const getAllowedDistributions = (type: string) => {
     switch (type) {
-      case "String":
-        return ["uniform", "categorical"];
+      case "name":
+      case "vorname":
+      case "nachname":
+      case "vollständigername":
+        return ["categorical"];
+      case "geschlecht":
+      case "gender":
+        return ["categorical"];
       case "Date":
+      case "date":
         return ["uniform"];
-      case "Double":
-        return ["normal", "uniform", "gamma", "lognormal", "exponential"];
+      case "körpergröße":
+      case "gewicht":
+      case "float":
+      case "dwelltime":
+        return ["uniform", "normal"];
       case "Integer":
-        return ["uniform", "normal", "binomial", "poisson"];
+      case "integer":
+      case "alter":
+      case "plz":
+      case "hausnummer":
+        return ["uniform", "normal", "poisson"];
+      case "adresse":
+      case "straße":
+      case "stadt":
+      case "land":
+      case "email":
+      case "telefon":
+        return ["categorical"]; //  Neue Feldtypen
       default:
         return ["normal", "uniform", "gamma"];
     }
   };
 
-  // Input-Type
+  // Input-Type erweitert
   const getInputType = () => {
-    if (fieldType === "Date") return "date";
-    if (fieldType === "Double") return "number";
-    if (fieldType === "Integer") return "number";
+    if (fieldType.toLowerCase() === "date") return "date";
+    if (["integer", "körpergröße", "alter", "plz", "hausnummer", "gewicht"].includes(fieldType.toLowerCase())) 
+      return "number";
     return "text";
   };
 
-  // Platzhalter
+  //  NEU: Verbesserte Platzhalter für mimesis-Typen
   const getPlaceholder = (distribution: string, paramKey: string) => {
-    if (fieldType === "Date") return "TT.MM.JJJJ";
+    const fieldTypeLower = fieldType.toLowerCase();
+    
+    if (fieldTypeLower === "date") return "TT.MM.JJJJ";
 
-    if (fieldType === "Double" || fieldType === "Integer") {
+    if (["körpergröße", "integer", "alter", "plz", "hausnummer", "gewicht"].includes(fieldTypeLower)) {
       switch (distribution) {
-        case "normal":
-          return paramKey === "a" ? "Mittelwert (μ)" : "Std.Abweichung (σ)";
         case "uniform":
           return paramKey === "a" ? "Minimum" : "Maximum";
-        case "gamma":
-          return paramKey === "a" ? "Shape (k)" : "Scale (θ)";
-        case "lognormal":
-          return paramKey === "a" ? "log-μ" : "log-σ";
-        case "exponential":
-          return "Rate (λ)";
-        default:
-          return paramKey === "a" ? "Parameter A" : "Parameter B";
-      }
-    }
-
-    if (fieldType === "Integer") {
-      switch (distribution) {
         case "normal":
           return paramKey === "a" ? "Mittelwert (μ)" : "Std.Abweichung (σ)";
-        case "uniform":
-          return paramKey === "a" ? "Minimum" : "Maximum";
-        case "binomial":
-          return paramKey === "a" ? "Anzahl Versuche (n)" : "Erfolgswahrscheinlichkeit (p)";
         case "poisson":
-          return "Rate (λ)";
+          return "Durchschnitt (λ)";
         default:
           return paramKey === "a" ? "Parameter A" : "Parameter B";
       }
     }
 
-    if (fieldType === "String") {
-      if (distribution === "uniform") return "Werte (mit Komma)";
+    if (["name", "vorname", "nachname", "vollständigername", "geschlecht", "adresse", "straße", "stadt", "land", "email", "telefon"].includes(fieldTypeLower)) {
       if (distribution === "categorical")
         return paramKey === "a" ? "Werte (mit Komma)" : "Gewichte (mit Komma)";
     }
@@ -148,16 +150,19 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
 
   // Soll Parameter B angezeigt werden?
   const shouldShowParameterB = (distribution: string) => {
-    if (fieldType === "String" && distribution === "uniform") return false;
     if (distribution === "exponential") return false;
-    if (fieldType === "Integer" && distribution === "poisson") return false;
+    if (distribution === "poisson") return false;
+    if (["name", "vorname", "nachname", "geschlecht", "adresse", "straße", "stadt", "land", "email", "telefon"].includes(fieldType.toLowerCase()) && 
+        distribution === "categorical") {
+      return true; //  Bei kategorialen Verteilungen für Namen etc. Parameter B für Gewichte anzeigen
+    }
     return true;
   };
 
   // Schrittweite
   const getStepValue = () => {
-    if (fieldType === "Double") return "0.01";
-    if (fieldType === "Integer") return "1";
+    if (["körpergröße", "gewicht"].includes(fieldType.toLowerCase())) return "0.01";
+    if (["integer", "alter", "plz", "hausnummer"].includes(fieldType.toLowerCase())) return "1";
     return undefined;
   };
 
@@ -190,15 +195,11 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
           overflowY: "auto",
         }}
       >
-        {/* Titel */}
-        <div className="d-flex align-items-start mb-4">
-          <h3>Verteilung spezifizieren für {fieldType}</h3>
-        </div>
 
         {/* Option 1 */}
         <div className="row mb-3">
           <div className="col-12">
-            <h5 className="fw-bold">Option 1:</h5>
+            <h5 className="fw-bold">Option 1: Manuelle Verteilungskonfiguration</h5>
           </div>
         </div>
 
@@ -324,7 +325,9 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
         <div className="text-center mt-4">
           <button
             className="me-3 btn btn-success px-4 py-2"
-            onClick={() => onSave(form)}
+            onClick={() => onSave({
+              ...form,
+            })}
             disabled={!form.distribution}
           >
             Speichern
