@@ -215,33 +215,29 @@ export const SynthDataWizard = () => {
     handleCloseDepModal();
   }; 
 
-  // Validate that name-like fields have a proper dependency on a 'geschlecht' field
-  const validateDependencies = (rowsToCheck: Row[]) => {
-    const errors: string[] = [];
-    const nameLike: FieldType[] = ["name", "vorname", "nachname"];
-    for (const r of rowsToCheck) {
-      if (nameLike.includes(r.type)) {
-        // Für bestimmte FELDTYPEN erwarten wir eine Abhängigkeit (z.B. 'geschlecht').
-        // Die Abhängigkeit wird über den FELDNAMEN angegeben und geprüft.
-        const depRaw = (r.dependency || "").split(",")[0]?.trim() || "";
-        if (!depRaw) {
-          errors.push(`Feld '${r.name || "(kein Name)"}' vom Typ '${r.type}' hat keine Abhängigkeit definiert.`);
-          continue;
-        }
-        // Suche Ziel per Name
-        const target = rowsToCheck.find((t) => t.name === depRaw);
-        if (!target) {
-          errors.push(`Feld '${r.name || "(kein Name)"}' hängt von '${depRaw}', dieses Feld existiert aber nicht.`);
-          continue;
-        }
-        // Der Typ des Ziel-Feldes muss 'geschlecht' sein — hier entscheidet sich wieder der FELDTYP.
-        if (target.type !== "geschlecht") {
-          errors.push(`Feld '${r.name || "(kein Name)"}' hängt von '${depRaw}', hat aber Typ '${target.type}' (erwartet 'geschlecht').`);
-        }
-      }
-    }
-    return errors;
-  };
+  // // Validate that name-like fields have a proper dependency on a 'geschlecht' field
+  // const validateDependencies = (rowsToCheck: Row[]) => {
+  //   const errors: string[] = [];
+  //   const nameLike: FieldType[] = ["name", "vorname", "nachname"];
+  //   for (const r of rowsToCheck) {
+  //     if (nameLike.includes(r.type)) {
+  //       const depRaw = (r.dependency || "").split(",")[0]?.trim() || "";
+  //       if (!depRaw) {
+  //         errors.push(`Feld '${r.name || "(kein Name)"}' vom Typ '${r.type}' hat keine Abhängigkeit definiert.`);
+  //         continue;
+  //       }
+  //       const target = rowsToCheck.find((t) => t.name === depRaw);
+  //       if (!target) {
+  //         errors.push(`Feld '${r.name || "(kein Name)"}' hängt von '${depRaw}', dieses Feld existiert aber nicht.`);
+  //         continue;
+  //       }
+  //       if (target.type !== "geschlecht") {
+  //         errors.push(`Feld '${r.name || "(kein Name)"}' hängt von '${depRaw}', hat aber Typ '${target.type}' (erwartet 'geschlecht').`);
+  //       }
+  //     }
+  //   }
+  //   return errors;
+  // };
 
   // Diese Funktion mappt einen FELDTYP (type) auf die passende UseCase-ID.
   // WICHTIG: Hier wird ausschliesslich 'type' (nicht 'name') verwendet, um zu entscheiden,
@@ -266,11 +262,11 @@ export const SynthDataWizard = () => {
   const handleExport = async () => {
     try {
       // Pre-export validation: ensure name-like fields depend on a 'geschlecht' field
-      const depProblems = validateDependencies(rows);
-      if (depProblems.length > 0) {
-        alert("Bitte beheben Sie die folgenden Abhängigkeits-Probleme vor dem Export:\n\n" + depProblems.join("\n"));
-        return;
-      }
+      // const depProblems = validateDependencies(rows);
+      // if (depProblems.length > 0) {
+      //   alert("Bitte beheben Sie die folgenden Abhängigkeits-Probleme vor dem Export:\n\n" + depProblems.join("\n"));
+      //   return;
+      // }
 
       // Hinzufügen der Use Case ID zum Export-Objekt
       // Hier werden ALLE Feldtypen gesammelt und dann auf UseCase-IDs gemappt.

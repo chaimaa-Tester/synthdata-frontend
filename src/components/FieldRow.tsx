@@ -112,11 +112,15 @@ export const FieldRow: React.FC<Props> = ({
       <div className="col-2">
         <input
           className="form-control"
-          value={getLabelForType(row.type) || ""}
+          value={row.type || "Feldtyp wählen"}
           readOnly
           onClick={() => setShowUseCaseModal(true)}
-          style={{ cursor: "pointer" }}
-          placeholder="Feldtyp"
+          style={{
+            cursor: "pointer",
+            backgroundColor: "white",
+            color: row.type ? "black" : "#6c757d"
+          }}
+          placeholder="Feldtyp wählen"
         />
       </div>
 
