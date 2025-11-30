@@ -10,7 +10,10 @@ import { FileUploadModal } from "./components/FileUploadModal";
 import { SortableFieldRow } from "./components/SortableFieldRow";
 import { FieldTableHeader } from "./components/FieldTableHeader";
 import { ExportOptions } from "./components/ExportOptions";
-import { useCases, FieldType } from "./types/fieldTypes";
+import { useCases, FieldType, getDefaultValuesForType, getLabelForType } from "./types/fieldTypes";
+import { ValueListModal } from "./components/ValueListModal";
+
+
 import { CustomDistributionCanvas } from "./components/CustomDistributionCanvas";
 
 // NEU: dnd-kit imports
@@ -36,18 +39,23 @@ import { DependencyDistributionModal } from "./components/DependencyDistribution
 
 // Use Cases werden jetzt im UseCaseModal verwaltet
 
+export type ValueSource = "default" | "custom";
+
 export type Row = {
   id: string;
   // 'name' ist der frei editierbare Feldname (z.B. "vorname", "email" oder beliebiger Label).
   // Wichtig: Der Name wird hauptsächlich zur Anzeige und als Referenz für Abhängigkeiten verwendet,
   // nicht um das Verhalten/UseCase zu bestimmen.
   name: string;
+
   // 'type' ist der FELDTYP und bestimmt das Verhalten, die verfügbaren Verteilungen
   // und welche UseCase-ID später verwendet wird. Der Typ ist die entscheidende Information
   // für Logik/Export, nicht der Name.
-  type: FieldType; //  NEU: Erweiterte Feldtypen
+  type: FieldType;
+
   // 'dependency' speichert gegebenenfalls den Namen eines anderen Feldes, von dem dieses Feld abhängt.
   dependency: string;
+
   distributionConfig: {
     distribution: string;
     parameterA: string;
@@ -55,15 +63,19 @@ export type Row = {
     extraParams?: string[];
     dependency?: string;
   };
+
+  // NEU: für Felder mit auswählbarer Werteliste (z. B. Containertyp, Service-Route)
+  valueSource?: ValueSource;   // "default" = unsere Liste, "custom" = eigene Liste des Users
+  customValues?: string[];     // vom User definierte Werte
 };
+
 
 const makeDefaultRow = (): Row => ({
   id: `${Date.now()}-${Math.random()}`,
   // Standardname leer: der User kann hier beliebigen Text eingeben.
-  // Das ist bewusst so - es gibt keine harte Validierung des Namens bei der Eingabe.
   name: "",
-  // Standard-Feldtyp ist "name" (dies beeinflusst z.B. welche UseCase-ID genommen wird).
-  type: "",
+  // Standard-Feldtyp ist leer, bis der User einen Feldtyp wählt.
+  type: "" as FieldType,
   dependency: "",
   distributionConfig: {
     distribution: "",
@@ -72,7 +84,10 @@ const makeDefaultRow = (): Row => ({
     extraParams: [],
     dependency: "",
   },
+  valueSource: "default",
+  customValues: [],
 });
+
 
 // -------------------- Komponente --------------------
 
@@ -89,11 +104,16 @@ export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({ profileId }) =
   const [format, setFormat] = useState<string>("CSV");
   const [lineEnding, setLineEnding] = useState<string>("Windows(CRLF)");
   const [showModal, setShowModal] = useState<boolean>(false);
+  // Upload-Modal (bestehende Funktionalität)
   const [showUploadModal, setShowUploadModal] = useState<boolean>(false);
-  const [activeRowIdx, setActiveRowIdx] = useState<number | null>(null);
+  const [activeRowIdx, setActiveRowIdx] = useState<number | null>(null)
+    // NEU: Wertelisten-Editor (Stift)
+  const [showValueListModal, setShowValueListModal] = useState(false);
+  const [valueListRowIdx, setValueListRowIdx] = useState<number | null>(null);
+
   // State for custom draw modal
   const [showCustomDraw, setShowCustomDraw] = useState<boolean>(false);
-  const [activeFieldIndex, setActiveFieldIndex] = useState<number | null>(null);
+  const [ activeFieldIndex, setActiveFieldIndex] = useState<number | null>(null);
   // Handler for opening custom draw modal
   const handleCustomDraw = (idx: number) => {
     setActiveFieldIndex(idx);
@@ -202,6 +222,31 @@ export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({ profileId }) =
     setDepTargetType(targetType);
     setShowDepModal(true);
   };
+    const handleOpenValueListModal = (rowIdx: number) => {
+    setValueListRowIdx(rowIdx);
+    setShowValueListModal(true);
+  };
+
+  const handleCloseValueListModal = () => {
+    setShowValueListModal(false);
+    setValueListRowIdx(null);
+  };
+
+  const handleSaveValueList = (valueSource: "default" | "custom", customValues: string[]) => {
+    if (valueListRowIdx === null) return;
+    setRows((prev) => {
+      const next = [...prev];
+      next[valueListRowIdx] = {
+        ...next[valueListRowIdx],
+        valueSource,
+        customValues,
+      };
+      return next;
+    });
+    setShowValueListModal(false);
+    setValueListRowIdx(null);
+  };
+
 
   const handleCloseDepModal = () => {
     setShowDepModal(false);
@@ -421,6 +466,20 @@ export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({ profileId }) =
     return () => clearTimeout(timeout);
   }, [rows, rowCount, format, lineEnding, profileId]);
 
+  const handleEditValuesFromUseCaseModal = (fieldType: FieldType, newValues: string[]) => {
+    if (activeRowIdx === null) return;
+    setRows((prev) => {
+      const copy = [...prev];
+      const row = { ...copy[activeRowIdx] };
+      // Setze nur type + customValues/valueSource — NICHT row.name
+      row.type = fieldType;
+      row.customValues = newValues.length ? newValues : [];
+      row.valueSource = newValues.length ? "custom" : "default";
+      copy[activeRowIdx] = row;
+      return copy;
+    });
+  };
+
   return (
     <div
       className="px-5 py-5 text-white"
@@ -467,6 +526,7 @@ export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({ profileId }) =
               allFieldNames={allFieldNames}
               onCustomDraw={() => handleCustomDraw(idx)}
               onOpenUploadModal={() => openUploadModal(idx)}
+             onOpenValueEditor={handleOpenValueListModal}
             />
           ))}
         </SortableContext>
@@ -509,6 +569,22 @@ export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({ profileId }) =
           onSave={handleSaveDistribution}
           initialData={rows[activeRowIdx].distributionConfig}
           fieldType={rows[activeRowIdx].type}
+        />
+      )}
+
+      {/* Wertelisten-Editor (Stift) */}
+      {showValueListModal && valueListRowIdx !== null && (
+        <ValueListModal
+          show={showValueListModal}
+          onClose={handleCloseValueListModal}
+          fieldLabel={
+            rows[valueListRowIdx].name ||
+            getLabelForType(rows[valueListRowIdx].type)
+          }
+          defaultValues={getDefaultValuesForType(rows[valueListRowIdx].type)}
+          valueSource={rows[valueListRowIdx].valueSource ?? "default"}
+          customValues={rows[valueListRowIdx].customValues ?? []}
+          onSave={handleSaveValueList}
         />
       )}
 
