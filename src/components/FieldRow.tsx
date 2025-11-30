@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { UseCaseModal } from "./UseCaseModal";
-import { getLabelForType } from "../types/fieldTypes";
+import { getLabelForType, getDefaultValuesForType } from "../types/fieldTypes";
 
 type Props = {
   row: any;
@@ -8,11 +8,12 @@ type Props = {
   onChange: (idx: number, field: string, value: any) => void;
   onOpenModal: (idx: number) => void;
   onCustomDraw: (idx: number) => void;
-  onOpenUploadModal: (idx:number) => void;
+  onOpenUploadModal: (idx: number) => void;
   onOpenDependencyModal?: (idx: number) => void;
   handleDeleteRow: (idx: number) => void;
   allFieldNames: string[];
   dragHandleProps?: any;
+  onOpenValueEditor?: (idx: number) => void;
 };
 
 export const FieldRow: React.FC<Props> = ({
@@ -26,7 +27,9 @@ export const FieldRow: React.FC<Props> = ({
   handleDeleteRow,
   allFieldNames,
   dragHandleProps,
+  onOpenValueEditor,
 }) => {
+  // Abhängigkeiten (Dropdown)
   const parseDeps = (text: string): string[] =>
     (text || "")
       .split(",")
@@ -36,11 +39,14 @@ export const FieldRow: React.FC<Props> = ({
   const toCommaString = (arr: string[]) =>
     Array.from(new Set(arr.filter(Boolean))).join(", ");
 
-  const allOptions: string[] = useMemo(() => {
-    return allFieldNames.filter((name) => name && name !== row.name);
-  }, [allFieldNames, row.name]);
+  const allOptions: string[] = useMemo(
+    () => allFieldNames.filter((name) => name && name !== row.name),
+    [allFieldNames, row.name]
+  );
 
-  const [selected, setSelected] = useState<string[]>(() => parseDeps(row.dependency));
+  const [selected, setSelected] = useState<string[]>(() =>
+    parseDeps(row.dependency)
+  );
   useEffect(() => {
     setSelected(parseDeps(row.dependency));
   }, [row.dependency]);
@@ -52,8 +58,8 @@ export const FieldRow: React.FC<Props> = ({
 
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
-  
-  // NEU: Use Case Modal State
+
+  // UseCase-Auswahl
   const [showUseCaseModal, setShowUseCaseModal] = useState(false);
 
   useEffect(() => {
@@ -77,23 +83,51 @@ export const FieldRow: React.FC<Props> = ({
   const clearAll = () => updateSelection([]);
 
   const label =
-    selected.length === 0
-      ? "Abhängigkeiten wählen"
-      : selected.join(", ");
+    selected.length === 0 ? "Abhängigkeiten wählen" : selected.join(", ");
+
+  // Anzeige im Feldtyp-Feld:
+  // – Basislabel aus fieldTypes
+  // – bei Regex / Enums etc. zusätzlich das erste Muster / den ersten Wert
+  const typeLabelBase = getLabelForType(row.type);
+  const firstCustom =
+    row.customValues && row.customValues.length > 0
+      ? String(row.customValues[0])
+      : "";
+  const typeExtra =
+    firstCustom && row.type === "regex"
+      ? ` – ${firstCustom}`
+      : firstCustom && row.type !== "regex"
+      ? ` (${firstCustom})`
+      : "";
+  const typeDisplay = typeLabelBase + typeExtra;
+
+  // Feldtypen, bei denen die Werteliste editierbar ist (Stift in der Tabellenzeile)
+  const editableFieldTypes = useMemo(
+    () => [
+      "containerTyp",
+      "attributeSize",
+      "attributeStatus",
+      "attributeDirection",
+      "service_route",
+      "enum",
+      "list",
+      "regex",
+    ],
+    []
+  );
+  const isEditableFieldType = (t: string | undefined) =>
+    !!t && editableFieldTypes.includes(t);
 
   return (
-    <div
-      className="row mb-2 align-items-center flex-nowrap"
-      style={{ minWidth: 1400 }} // NEU: Breite angepasst für neue Spalte
-    >
+    <div className="row mb-2 align-items-center">
       {/* Drag Handle */}
-      <div 
+      <div
         className="col-auto d-flex align-items-center px-0"
         {...(dragHandleProps || {})}
         style={{
           cursor: "grab",
           userSelect: "none",
-          padding: "6px 8px"
+          padding: "6px 8px",
         }}
         role="button"
         aria-label="Drag Handle"
@@ -112,17 +146,17 @@ export const FieldRow: React.FC<Props> = ({
         />
       </div>
 
-      {/* Feldtyp - wie Feldname */}
+      {/* Feldtyp (nur lesen, öffnet UseCase-Modal) */}
       <div className="col-2">
         <input
           className="form-control"
-          value={getLabelForType(row.type)}
+          value={typeDisplay}
           readOnly
           onClick={() => setShowUseCaseModal(true)}
           style={{
             cursor: "pointer",
             backgroundColor: "white",
-            color: row.type ? "black" : "#6c757d"
+            color: row.type ? "black" : "#6c757d",
           }}
           placeholder="Feldtyp wählen"
         />
@@ -176,9 +210,7 @@ export const FieldRow: React.FC<Props> = ({
               overflowY: "auto",
             }}
           >
-            <div
-              className="d-flex justify-content-between align-items-center px-2 py-1 border-bottom"
-            >
+            <div className="d-flex justify-content-between align-items-center px-2 py-1 border-bottom">
               <button
                 type="button"
                 className="btn btn-sm btn-outline-secondary"
@@ -228,20 +260,21 @@ export const FieldRow: React.FC<Props> = ({
         )}
       </div>
 
-      {/* Verteilung & Löschen */}
-      <div className="col-3 d-flex align-items-center">
+      {/* Verteilung & Aktionen */}
+      <div className="col-4 d-flex align-items-center">
         <button
           className="btn me-3"
           style={{
             backgroundColor: "rgb(115, 67, 131)",
             color: "white",
-            minWidth: "150px"
+            minWidth: "150px",
           }}
           onClick={() => onOpenModal(idx)}
           title="Verteilung und Parameter konfigurieren"
         >
           Standard-Verteilung
         </button>
+
         <button
           className="btn me-3"
           style={{
@@ -252,6 +285,7 @@ export const FieldRow: React.FC<Props> = ({
         >
           Verteilung berechnen
         </button>
+
         <button
           className="btn me-3"
           style={{
@@ -264,52 +298,84 @@ export const FieldRow: React.FC<Props> = ({
         </button>
 
         <button
-            className="btn"
-            onClick={() => onOpenDependencyModal && onOpenDependencyModal(idx)}
-            disabled={!row.dependency}
-            title={row.dependency ? "Abhängigkeits-Verteilung festlegen" : "Zuerst Abhängigkeit wählen"}
-            style={{
-              backgroundColor: row.dependency ? "rgb(115,67,131)" : "rgba(255,255,255,0.12)",
-              color: "white",
-            }}
-          >
-            Abhängigkeits-Verteilung
-          </button>
-        
-        {/* Löschen-Button (direkt neben Verteilung) */}
-        <button
-          type="button"
-          className="btn ms-3"
-          aria-label="Delete"
-          style={{ padding: 0, background: "none", border: "none", marginLeft: 8 }}
-          onClick={() => handleDeleteRow(idx)}
-          title="Zeile löschen"
+          className="btn"
+          onClick={() => onOpenDependencyModal && onOpenDependencyModal(idx)}
+          disabled={!row.dependency}
+          title={
+            row.dependency
+              ? "Abhängigkeits-Verteilung festlegen"
+              : "Zuerst Abhängigkeit wählen"
+          }
+          style={{
+            backgroundColor: row.dependency
+              ? "rgb(115,67,131)"
+              : "rgba(255,255,255,0.12)",
+            color: "white",
+          }}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="22"
-            height="22"
-            fill="white"
-            viewBox="0 0 16 16"
+          Abhängigkeits-Verteilung
+        </button>
+
+        <div className="d-flex align-items-center ms-2">
+          {/* Löschen */}
+          <button
+            type="button"
+            className="btn ms-3"
+            aria-label="Delete"
+            style={{
+              padding: 0,
+              background: "none",
+              border: "none",
+              marginLeft: 8,
+            }}
+            onClick={() => handleDeleteRow(idx)}
+            title="Zeile löschen"
           >
-            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5.5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6zm2 .5a.5.5 0 0 1 .5-.5.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6z" />
-            <path
-              fillRule="evenodd"
-              d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1 0-2h3.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1H14a1 1 0 0 1 1 1zm-3-1a.5.5 0 0 0-.5-.5h-2a.5.5 0 0 0-.5.5V3h3V2zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118z"
-            />
-          </svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="22"
+              height="22"
+              fill="white"
+              viewBox="0 0 16 16"
+            >
+              <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5.5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6zm2 .5a.5.5 0 0 1 .5-.5.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6z" />
+              <path
+                fillRule="evenodd"
+                d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1 0-2h3.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1H14a1 1 0 0 1 1 1zm-3-1a.5.5 0 0 0-.5-.5h-2a.5.5 0 0 0-.5.5V3h3V2zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118z"
+              />
+            </svg>
           </button>
+
+          {/* weitere Action-Buttons (Upload, Draw, etc.) */}
         </div>
 
-        {/* NEU: Use Case Modal */}
+        {/* UseCase Modal */}
         <UseCaseModal
           show={showUseCaseModal}
           onClose={() => setShowUseCaseModal(false)}
           onSelectField={(fieldType) => {
+            // Nur den Feldtyp setzen
             onChange(idx, "type", fieldType);
+
+            // Falls es vordefinierte Werte gibt, direkt übernehmen
+            const defaults = getDefaultValuesForType(fieldType);
+            if (defaults.length > 0) {
+              onChange(idx, "valueSource", "default");
+              onChange(idx, "customValues", defaults);
+            }
+
+            setShowUseCaseModal(false);
+          }}
+          onEditValues={(fieldType, newValues) => {
+            // Typ setzen (z. B. regex)
+            onChange(idx, "type", fieldType);
+            // Benutzerdefinierte Liste speichern – NICHT im Namen!
+            onChange(idx, "valueSource", "custom");
+            onChange(idx, "customValues", newValues);
             setShowUseCaseModal(false);
           }}
         />
+      </div>
     </div>
   );
 };
