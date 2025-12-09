@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { UseCaseModal } from "./UseCaseModal";
 import { getLabelForType, getDefaultValuesForType } from "../types/fieldTypes";
+import { NameSourceModal } from "./NameSourceModal"; // <-- eigenes Modal für Namensquelle
 
 type Props = {
   row: any;
@@ -47,6 +48,7 @@ export const FieldRow: React.FC<Props> = ({
   const [selected, setSelected] = useState<string[]>(() =>
     parseDeps(row.dependency)
   );
+
   useEffect(() => {
     setSelected(parseDeps(row.dependency));
   }, [row.dependency]);
@@ -61,6 +63,8 @@ export const FieldRow: React.FC<Props> = ({
 
   // UseCase-Auswahl
   const [showUseCaseModal, setShowUseCaseModal] = useState(false);
+  // Namensquellen-Auswahl (für firstname/lastname/fullname)
+  const [showNameSourceModal, setShowNameSourceModal] = useState(false);
 
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
@@ -72,6 +76,7 @@ export const FieldRow: React.FC<Props> = ({
   }, []);
 
   const isChecked = (opt: string) => selected.includes(opt);
+
   const toggle = (opt: string) => {
     const next = isChecked(opt)
       ? selected.filter((s) => s !== opt)
@@ -87,7 +92,7 @@ export const FieldRow: React.FC<Props> = ({
 
   // Anzeige im Feldtyp-Feld:
   // – Basislabel aus fieldTypes
-  // – bei Regex / Enums etc. zusätzlich das erste Muster / den ersten Wert
+  // – bei Regex zusätzlich erstes Muster / bei Listen erster Wert
   const typeLabelBase = getLabelForType(row.type);
   const firstCustom =
     row.customValues && row.customValues.length > 0
@@ -100,6 +105,9 @@ export const FieldRow: React.FC<Props> = ({
       ? ` (${firstCustom})`
       : "";
   const typeDisplay = typeLabelBase + typeExtra;
+
+  // Name-Felder (für 🌐-Icon)
+  const isNameField = ["firstname", "lastname", "fullname"].includes(row.type);
 
   // Feldtypen, bei denen die Werteliste editierbar ist (Stift in der Tabellenzeile)
   const editableFieldTypes = useMemo(
@@ -147,7 +155,7 @@ export const FieldRow: React.FC<Props> = ({
       </div>
 
       {/* Feldtyp (nur lesen, öffnet UseCase-Modal) */}
-      <div className="col-2">
+      <div className="col-2" style={{ position: "relative" }}>
         <input
           className="form-control"
           value={typeDisplay}
@@ -155,11 +163,34 @@ export const FieldRow: React.FC<Props> = ({
           onClick={() => setShowUseCaseModal(true)}
           style={{
             cursor: "pointer",
-            backgroundColor: "white",
-            color: row.type ? "black" : "#6c757d",
+            backgroundColor: "White",
+            color: row.type ? "black" : "#00070eff",
           }}
           placeholder="Feldtyp wählen"
         />
+
+        {isNameField && (
+  <span
+    onClick={() => setShowNameSourceModal(true)}
+    style={{
+      position: "absolute",
+      right: 20,
+      top: "50%",
+      transform: "translateY(-50%)",
+      fontSize: 18,
+      cursor: "pointer",
+      color: "rgb(115, 67, 131)",          // dezentes Grau
+      opacity: 0.65,
+      userSelect: "none",
+    }}
+    onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+    onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.65")}
+    title="Namensquelle auswählen"
+  >
+    🌍
+  </span>
+)}
+
       </div>
 
       {/* Abhängigkeit Dropdown */}
@@ -299,7 +330,9 @@ export const FieldRow: React.FC<Props> = ({
 
         <button
           className="btn"
-          onClick={() => onOpenDependencyModal && onOpenDependencyModal(idx)}
+          onClick={() =>
+            onOpenDependencyModal && onOpenDependencyModal(idx)
+          }
           disabled={!row.dependency}
           title={
             row.dependency
@@ -345,36 +378,43 @@ export const FieldRow: React.FC<Props> = ({
               />
             </svg>
           </button>
-
-          {/* weitere Action-Buttons (Upload, Draw, etc.) */}
         </div>
 
-        {/* UseCase Modal */}
-        <UseCaseModal
-          show={showUseCaseModal}
-          onClose={() => setShowUseCaseModal(false)}
-          onSelectField={(fieldType) => {
-            // Nur den Feldtyp setzen
-            onChange(idx, "type", fieldType);
+        {/* UseCaseModal */}
+        {showUseCaseModal && (
+          <UseCaseModal
+            show={showUseCaseModal}
+            onClose={() => setShowUseCaseModal(false)}
+            onSelectField={(fieldType) => {
+              onChange(idx, "type", fieldType);
+              const defaults = getDefaultValuesForType(fieldType);
+              if (defaults.length > 0 && !row.customValues) {
+                onChange(idx, "valueSource", "default");
+                onChange(idx, "customValues", defaults);
+              }
+              setShowUseCaseModal(false);
+            }}
+            onEditValues={(fieldType, newValues) => {
+              onChange(idx, "type", fieldType);
+              onChange(idx, "valueSource", "custom");
+              onChange(idx, "customValues", newValues);
+              setShowUseCaseModal(false);
+            }}
+            currentRow={row}
+          />
+        )}
 
-            // Falls es vordefinierte Werte gibt, direkt übernehmen
-            const defaults = getDefaultValuesForType(fieldType);
-            if (defaults.length > 0) {
-              onChange(idx, "valueSource", "default");
-              onChange(idx, "customValues", defaults);
-            }
-
-            setShowUseCaseModal(false);
-          }}
-          onEditValues={(fieldType, newValues) => {
-            // Typ setzen (z. B. regex)
-            onChange(idx, "type", fieldType);
-            // Benutzerdefinierte Liste speichern – NICHT im Namen!
-            onChange(idx, "valueSource", "custom");
-            onChange(idx, "customValues", newValues);
-            setShowUseCaseModal(false);
-          }}
-        />
+        {/* NameSourceModal (für 🌐) */}
+        {showNameSourceModal && (
+          <NameSourceModal
+            show={showNameSourceModal}
+            onClose={() => setShowNameSourceModal(false)}
+            onSelect={(source: string) => {
+              onChange(idx, "nameSource", source);
+              setShowNameSourceModal(false);
+            }}
+          />
+        )}
       </div>
     </div>
   );

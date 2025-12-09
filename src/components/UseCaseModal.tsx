@@ -1,24 +1,40 @@
-import React, { useState, useEffect } from "react";
-import { useCases, FieldType, getDefaultValuesForType } from "../types/fieldTypes";
+import React, { useEffect, useState } from "react";
+import {
+  useCases,
+  FieldType,
+  getDefaultValuesForType,
+} from "../types/fieldTypes";
 import { Tooltip } from "./Tooltip";
 
 type UseCaseModalProps = {
   show: boolean;
   onClose: () => void;
   onSelectField: (fieldType: FieldType) => void;
-  // optionaler Callback: wenn der Nutzer im Tooltip die Default-Liste bearbeitet
   onEditValues?: (fieldType: FieldType, newValues: string[]) => void;
+  currentRow?: any;
 };
+
+type ValueEditorState = {
+  fieldType: FieldType | string;
+  label: string;
+  initialValues: string[];
+} | null;
 
 export const UseCaseModal: React.FC<UseCaseModalProps> = ({
   show,
   onClose,
   onSelectField,
   onEditValues,
+  currentRow,
 }) => {
   const [selectedUseCase, setSelectedUseCase] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeGroupIndex, setActiveGroupIndex] = useState(0);
+
+  // internes Werte-Editor-Modal
+  const [valueEditorState, setValueEditorState] =
+    useState<ValueEditorState>(null);
+  const [valueEditorText, setValueEditorText] = useState("");
 
   // Reset bei Öffnen/Schließen
   useEffect(() => {
@@ -26,10 +42,12 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
       setSelectedUseCase(null);
       setSearchTerm("");
       setActiveGroupIndex(0);
+      setValueEditorState(null);
+      setValueEditorText("");
     }
   }, [show]);
 
-  // Wenn ein anderer UseCase gewählt wird, immer auf erste Gruppe springen
+  // Bei UseCase-Wechsel immer auf erste Gruppe
   useEffect(() => {
     setActiveGroupIndex(0);
   }, [selectedUseCase]);
@@ -54,12 +72,17 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
     setActiveGroupIndex(0);
   };
 
-  const selectedUseCaseData = useCases.find((uc) => uc.id === selectedUseCase);
+  const selectedUseCaseData = useCases.find(
+    (uc) => uc.id === selectedUseCase
+  );
 
-  // Felder bestimmen
+  // Felder des aktiven UseCases bestimmen
   let allFields: any[] = [];
   if (selectedUseCaseData) {
-    if (selectedUseCaseData.fieldGroups && selectedUseCaseData.fieldGroups.length > 0) {
+    if (
+      selectedUseCaseData.fieldGroups &&
+      selectedUseCaseData.fieldGroups.length > 0
+    ) {
       const groups = selectedUseCaseData.fieldGroups;
       const activeGroup = groups[Math.min(activeGroupIndex, groups.length - 1)];
       allFields = activeGroup?.fields ?? [];
@@ -71,6 +94,53 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
   const filteredFields = allFields.filter((field: any) =>
     field.label.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // -----------------------------
+  // Werte-Editor öffnen / schließen / speichern
+  // -----------------------------
+
+  const openValueEditor = (field: any) => {
+    const defaults = getDefaultValuesForType(field.value) || [];
+    const currentValues =
+      currentRow &&
+      Array.isArray(currentRow.customValues) &&
+      currentRow.customValues.length
+        ? currentRow.customValues
+        : defaults;
+
+    setValueEditorState({
+      fieldType: field.value,
+      label: field.label,
+      initialValues: currentValues,
+    });
+    setValueEditorText(currentValues.join(", "));
+  };
+
+  const closeValueEditor = () => {
+    setValueEditorState(null);
+    setValueEditorText("");
+  };
+
+  const handleValueEditorSave = () => {
+    if (!valueEditorState) return;
+
+    const raw = valueEditorText || "";
+    const arr = raw
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (onEditValues) {
+      onEditValues(valueEditorState.fieldType as FieldType, arr);
+    }
+    onSelectField(valueEditorState.fieldType as FieldType);
+    closeValueEditor();
+    onClose();
+  };
+
+  // -----------------------------
+  // Render
+  // -----------------------------
 
   return (
     <div
@@ -97,19 +167,22 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
           maxHeight: "80%",
           padding: "2rem",
           overflowY: "auto",
+          position: "relative",
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="d-flex justify-content-between align-items-center mb-4">
           <h4 className="text-dark mb-0">
-            {selectedUseCase ? selectedUseCaseData?.label : "Feldtyp wählen"}
+            {selectedUseCase
+              ? selectedUseCaseData?.label
+              : "Feldtyp wählen"}
           </h4>
           <button className="btn-close" onClick={onClose} aria-label="Close" />
         </div>
 
+        {/* UseCase-Auswahl */}
         {!selectedUseCase ? (
-          /* Use-Case-Auswahl */
           <div>
             <p className="text-muted mb-4">
               Wählen Sie einen Anwendungsbereich für Ihre Datenfelder:
@@ -127,7 +200,8 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
                     }}
                     onClick={() => handleUseCaseSelect(useCase.id)}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = "rgb(115,67,131)";
+                      e.currentTarget.style.borderColor =
+                        "rgb(115,67,131)";
                       e.currentTarget.style.backgroundColor = "#faf5fb";
                       e.currentTarget.style.boxShadow =
                         "0 6px 16px rgba(115,67,131,0.08)";
@@ -139,10 +213,14 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
                     }}
                   >
                     <div className="card-body text-center">
-                      <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>
+                      <div
+                        style={{ fontSize: "3rem", marginBottom: "1rem" }}
+                      >
                         {useCase.icon}
                       </div>
-                      <h5 className="card-title text-dark">{useCase.label}</h5>
+                      <h5 className="card-title text-dark">
+                        {useCase.label}
+                      </h5>
                       <p className="card-text text-muted">
                         {useCase.description}
                       </p>
@@ -183,7 +261,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
               </div>
             </div>
 
-            {/* Dynamische Gruppen-Tabs, falls fieldGroups vorhanden */}
+            {/* Gruppen-Tabs */}
             {selectedUseCaseData?.fieldGroups &&
               selectedUseCaseData.fieldGroups.length > 0 && (
                 <div className="d-flex flex-wrap gap-2 mb-4">
@@ -211,13 +289,16 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
                 </div>
               )}
 
+            {/* Feldliste */}
             <div className="row g-2">
-              {filteredFields.map((field) => (
+              {filteredFields.map((field: any) => (
                 <div key={field.value} className="col-md-6">
                   <div style={{ position: "relative" }}>
                     <button
                       className="btn w-100 text-start"
-                      onClick={() => handleFieldSelect(field.value)}
+                      onClick={() =>
+                        handleFieldSelect(field.value as FieldType)
+                      }
                       style={{
                         padding: "0.75rem 1rem",
                         border: "2px solid #e6e6e6",
@@ -228,7 +309,8 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
                         backgroundColor: "white",
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = "rgb(115,67,131)";
+                        e.currentTarget.style.borderColor =
+                          "rgb(115,67,131)";
                         e.currentTarget.style.backgroundColor = "#fbf2fb";
                         e.currentTarget.style.boxShadow =
                           "0 6px 12px rgba(115,67,131,0.06)";
@@ -243,105 +325,170 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
                         <div className="fw-bold text-dark">
                           {field.label}
                         </div>
-                        {/* field.value absichtlich nicht mehr anzeigen */}
                       </div>
-                      {field.tooltip ? (
+
+                      {/* Tooltip nur anzeigen, wenn KEIN Werte-Editor offen ist */}
+                      {field.tooltip && !valueEditorState ? (
                         <div style={{ marginLeft: 12, marginRight: 6 }}>
                           <Tooltip
-                            // Tooltip-Content erweitern: Tooltip zeigt Tooltip-Text
-                            // plus vordefinierte Werte (falls vorhanden) und einen Stift zum Editieren.
                             content={
                               <div style={{ maxWidth: 320 }}>
-                                <div style={{ marginBottom: 8 }}>{field.tooltip}</div>
-                                {/* Zeige Default-Werte falls vorhanden */}
-                                {getDefaultValuesForType(field.value)?.length ? (
+                                <div style={{ marginBottom: 8 }}>
+                                  {field.tooltip}
+                                </div>
+
+                                {/* Default-Werte anzeigen */}
+                                {getDefaultValuesForType(field.value)
+                                  ?.length ? (
                                   <div style={{ marginBottom: 8 }}>
-                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                                      <strong>Vordefinierte Werte:</strong>
-                                      <small style={{ color: "rgba(255,255,255,0.65)" }}>Klicken zum Auswählen</small>
+                                    <div
+                                      style={{
+                                        display: "flex",
+                                        justifyContent:
+                                          "space-between",
+                                        alignItems: "center",
+                                        marginBottom: 6,
+                                      }}
+                                    >
+                                      <strong>
+                                        Vordefinierte Werte:
+                                      </strong>
+                                      <small
+                                        style={{
+                                          color:
+                                            "rgba(255,255,255,0.65)",
+                                        }}
+                                      >
+                                        Klicken zum Auswählen
+                                      </small>
                                     </div>
 
-                                    <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 8 }}>
-                                      {getDefaultValuesForType(field.value).map((v) => (
+                                    <div
+                                      style={{
+                                        marginTop: 6,
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: 8,
+                                      }}
+                                    >
+                                      {getDefaultValuesForType(
+                                        field.value
+                                      ).map((v) => (
                                         <button
                                           key={v}
                                           type="button"
                                           onClick={() => {
-                                            // neue Logik: speichere die ganze Default-Liste, aber setze das
-                                            // gewählte Element an erste Stelle (Preview zeigt das ausgewählte)
-                                            const defaults = getDefaultValuesForType(field.value) || [];
-                                            const ordered = [v, ...defaults.filter((d) => d !== v)];
+                                            const defaults =
+                                              getDefaultValuesForType(
+                                                field.value
+                                              ) || [];
+                                            const ordered = [
+                                              v,
+                                              ...defaults.filter(
+                                                (d) => d !== v
+                                              ),
+                                            ];
                                             if (onEditValues) {
-                                              onEditValues(field.value as FieldType, ordered);
+                                              onEditValues(
+                                                field.value as FieldType,
+                                                ordered
+                                              );
                                             }
-                                            // Feldtyp auswählen / Modal schließen
-                                            onSelectField(field.value as FieldType);
+                                            onSelectField(
+                                              field.value as FieldType
+                                            );
                                           }}
                                           style={{
                                             cursor: "pointer",
                                             textAlign: "left",
                                             padding: "8px 10px",
-                                            background: "rgba(11,35,55,0.9)",
+                                            background:
+                                              "rgba(11,35,55,0.9)",
                                             color: "white",
                                             fontFamily: "monospace",
                                             borderRadius: 8,
-                                            border: "1px solid rgba(255,255,255,0.06)",
+                                            border:
+                                              "1px solid rgba(255,255,255,0.06)",
                                             display: "flex",
-                                            justifyContent: "space-between",
+                                            justifyContent:
+                                              "space-between",
                                             alignItems: "center",
-                                            transition: "transform .06s ease, background .08s ease, box-shadow .08s ease",
-                                            boxShadow: "inset 0 -1px 0 rgba(0,0,0,0.25)",
+                                            transition:
+                                              "transform .06s ease, background .08s ease, box-shadow .08s ease",
+                                            boxShadow:
+                                              "inset 0 -1px 0 rgba(0,0,0,0.25)",
                                           }}
                                           onMouseEnter={(e) => {
-                                            const el = e.currentTarget as HTMLButtonElement;
-                                            el.style.background = "rgba(115,67,131,0.95)";
-                                            el.style.transform = "translateY(-1px)";
-                                            el.style.boxShadow = "0 4px 10px rgba(0,0,0,0.25)";
+                                            const el =
+                                              e.currentTarget as HTMLButtonElement;
+                                            el.style.background =
+                                              "rgba(115,67,131,0.95)";
+                                            el.style.transform =
+                                              "translateY(-1px)";
+                                            el.style.boxShadow =
+                                              "0 4px 10px rgba(0,0,0,0.25)";
                                           }}
                                           onMouseLeave={(e) => {
-                                            const el = e.currentTarget as HTMLButtonElement;
-                                            el.style.background = "rgba(11,35,55,0.9)";
+                                            const el =
+                                              e.currentTarget as HTMLButtonElement;
+                                            el.style.background =
+                                              "rgba(11,35,55,0.9)";
                                             el.style.transform = "none";
-                                            el.style.boxShadow = "inset 0 -1px 0 rgba(0,0,0,0.25)";
+                                            el.style.boxShadow =
+                                              "inset 0 -1px 0 rgba(0,0,0,0.25)";
                                           }}
                                           title="Klicken, um dieses Muster zu verwenden"
                                         >
-                                          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginRight: 12 }}>{v}</span>
-                                          <span style={{ opacity: 0.85, fontSize: 14 }}>➜</span>
+                                          <span
+                                            style={{
+                                              overflow: "hidden",
+                                              textOverflow: "ellipsis",
+                                              whiteSpace: "nowrap",
+                                              marginRight: 12,
+                                            }}
+                                          >
+                                            {v}
+                                          </span>
+                                          <span
+                                            style={{
+                                              opacity: 0.85,
+                                              fontSize: 14,
+                                            }}
+                                          >
+                                            ➜
+                                          </span>
                                         </button>
                                       ))}
                                     </div>
                                   </div>
                                 ) : null}
-                                {/* Stift: nur sichtbar wenn Parent einen Edit-Callback übergeben hat */}
+
+                                {/* Eigener Editor-Button (ohne window.prompt) */}
                                 {onEditValues ? (
-                                  <div style={{ textAlign: "right", marginTop: 6 }}>
+                                  <div
+                                    style={{
+                                      textAlign: "right",
+                                      marginTop: 6,
+                                    }}
+                                  >
                                     <button
                                       className="btn btn-sm btn-secondary w-100 d-flex align-items-center justify-content-center"
-                                      onClick={() => {
-                                        const currentDefaults = getDefaultValuesForType(field.value) || [];
-                                        const raw = window.prompt(
-                                          `Eigene Werte für ${field.label} (Komma-getrennt):`,
-                                          currentDefaults.join(", ")
-                                        );
-                                        if (raw === null) return;
-                                        const arr = raw
-                                          .split(",")
-                                          .map((s) => s.trim())
-                                          .filter(Boolean);
-                                        if (!arr.length) return;
-
-                                        // an Parent weitergeben (speichert in rows[activeRowIdx])
-                                        if (onEditValues) onEditValues(field.value as FieldType, arr);
-
-                                        // Feldtyp auswählen / Modal schließen
-                                        onSelectField(field.value as FieldType);
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        openValueEditor(field);
                                       }}
                                       title="Eigene Werte für dieses Feld definieren"
                                       style={{ gap: 8 }}
                                     >
-                                      <span style={{ fontSize: 14 }}>✏️</span>
-                                      <span style={{ fontWeight: 600 }}>Werte bearbeiten</span>
+                                      <span style={{ fontSize: 14 }}>
+                                        ✏️
+                                      </span>
+                                      <span
+                                        style={{ fontWeight: 600 }}
+                                      >
+                                        Werte bearbeiten
+                                      </span>
                                     </button>
                                   </div>
                                 ) : null}
@@ -371,6 +518,69 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
                 Keine Felder gefunden für "{searchTerm}"
               </div>
             )}
+          </div>
+        )}
+
+        {/* internes Werte-Editor-Modal */}
+        {valueEditorState && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.45)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1000000,
+            }}
+            onClick={closeValueEditor}
+          >
+            <div
+              style={{
+                background: "white",
+                borderRadius: 12,
+                padding: "1.5rem",
+                width: "90%",
+                maxWidth: 500,
+                boxShadow: "0 12px 30px rgba(0,0,0,0.3)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h5 className="mb-2">
+                Eigene Werte für {valueEditorState.label}
+              </h5>
+              <p className="text-muted" style={{ fontSize: "0.9rem" }}>
+                Werte kommasepariert eingeben, z. B.:{" "}
+                <code>Rot, Grün, Blau</code>
+              </p>
+              <textarea
+                className="form-control"
+                rows={4}
+                value={valueEditorText}
+                onChange={(e) => setValueEditorText(e.target.value)}
+                placeholder="Wert1, Wert2, Wert3"
+              />
+              <div className="d-flex justify-content-end mt-3 gap-2">
+                <button
+                  className="btn btn-outline-secondary"
+                  type="button"
+                  onClick={closeValueEditor}
+                >
+                  Abbrechen
+                </button>
+                <button
+                  className="btn"
+                  type="button"
+                  style={{
+                    backgroundColor: "rgb(115,67,131)",
+                    color: "white",
+                  }}
+                  onClick={handleValueEditorSave}
+                >
+                  Übernehmen
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

@@ -1,11 +1,8 @@
+// =====================================
 // Zentrale Definitionen für Feldtypen und Use Cases
-export type FieldType =
-  // gesundheit – Patienteninformationen
-  | "körpergröße"
-  | "gewicht"
-  | "bmi"
-  | "gewichtdiagnose"
+// =====================================
 
+export type FieldType =
   // logistik – Containerdaten
   | "unitName"
   | "containerTyp"
@@ -29,11 +26,10 @@ export type FieldType =
   | "dischargeTEU"
 
   // Finanzen
-  | "kontonummer"
-  | "transaktionsdatum"
+  | "creditcard"
   | "transaktionsart"
-  | "betrag"
   | "IBAN"
+  | "currency"
 
   // Allgemeine Datentypen
   | "string"
@@ -55,19 +51,22 @@ export type FieldType =
   | "state"
   | "country"
   | "full_address"
-  | "enum"
   | "list"
+  | "enum"
   | "regex"
   | "uuid"
-  | "custom";
+  | "custom"
+  | "body_height"
+  | "weight"
+  | "bmi";
 
 // Felddefinition innerhalb eines UseCases
 export type UseCaseField = {
-  value: FieldType;
+  value: FieldType | string;
   label: string;
   tooltip?: string;
-  editableValues?: boolean;   // Feld hat bearbeitbare Werteliste
-  defaultValues?: string[];   // unsere vordefinierte Liste
+  editableValues?: boolean;  // Feld hat bearbeitbare Werteliste
+  defaultValues?: string[];  // vordefinierte Liste
 };
 
 export type FieldGroup = { groupLabel: string; fields: UseCaseField[] };
@@ -77,8 +76,6 @@ export type UseCase = {
   label: string;
   description: string;
   icon: string;
-  // Einige Use Cases haben eine flache 'fields'-Liste,
-  // andere sind in Gruppen unterteilt.
   fields?: UseCaseField[];
   fieldGroups?: FieldGroup[];
 };
@@ -95,6 +92,7 @@ export const useCases: UseCase[] = [
       "Flexible Definition eigener Felder, Werte und Strukturen – ohne Domainvorgaben.",
     icon: "🧩",
     fieldGroups: [
+      // ----------------- Primitive Datentypen -----------------
       {
         groupLabel: "🔤 Primitive Datentypen",
         fields: [
@@ -133,35 +131,39 @@ export const useCases: UseCase[] = [
         ],
       },
 
+      // ----------------- Personenbezogene Daten -----------------
       {
         groupLabel: "🧍 Personenbezogene Daten",
         fields: [
           {
             value: "firstname",
             label: "Vorname",
-            tooltip:
-              "Zufällig generierter Vorname aus Namensdatenbanken.",
+            tooltip: "Vorname abhängig von der gewählten Region.",
           },
           {
             value: "lastname",
             label: "Nachname",
             tooltip:
-              "Zufällig generierter Nachname aus Namensdatenbanken.",
+              "Nachname abhängig von der gewählten Region.",
+              editableValues: false,
           },
           {
             value: "fullname",
             label: "Vollständiger Name",
-            tooltip: "Automatische Kombination aus Vor- und Nachname.",
+            tooltip: "Vollständiger Name, Vor- und Nachname abhängig von der gewählten Region.",
+            editableValues: false,
           },
           {
             value: "gender",
             label: "Geschlecht",
             tooltip:
-              "Männlich, weiblich oder divers – inkl. Abhängigkeitsverteilung.",
+              "Männlich, weiblich oder divers - inkl. Abhängigkeitsverteilung.",
+              editableValues: false,
           },
         ],
       },
 
+      // ----------------- Kommunikationsdaten -----------------
       {
         groupLabel: "📞 Kommunikationsdaten",
         fields: [
@@ -180,14 +182,14 @@ export const useCases: UseCase[] = [
         ],
       },
 
+      // ----------------- Adressdaten -----------------
       {
         groupLabel: "🏠 Adressdaten",
         fields: [
           {
             value: "street",
             label: "Straße",
-            tooltip:
-              "Realistisch generierter Straßenname, z. B. ‚Hauptstraße‘ oder ‚Bahnhofweg‘.",
+            tooltip: "Realistisch generierter Straßenname.",
           },
           {
             value: "house_number",
@@ -198,8 +200,7 @@ export const useCases: UseCase[] = [
           {
             value: "postcode",
             label: "Postleitzahl (PLZ)",
-            tooltip:
-              "Landesspezifische Postleitzahl, z. B. 10115 für Berlin.",
+            tooltip: "Landesspezifische Postleitzahl.",
           },
           {
             value: "city",
@@ -210,14 +211,12 @@ export const useCases: UseCase[] = [
           {
             value: "state",
             label: "Bundesland",
-            tooltip:
-              "Bundesland oder Provinz, z. B. NRW, Bayern oder Ontario.",
+            tooltip: "Bundesland oder Provinz.",
           },
           {
             value: "country",
             label: "Land",
-            tooltip:
-              "Land aus internationaler Liste, z. B. Deutschland, Frankreich, USA.",
+            tooltip: "Land aus internationaler Liste.",
           },
           {
             value: "full_address",
@@ -228,6 +227,7 @@ export const useCases: UseCase[] = [
         ],
       },
 
+      // ----------------- Kategorien & Listen -----------------
       {
         groupLabel: "📚 Kategorien & Listen",
         fields: [
@@ -245,28 +245,31 @@ export const useCases: UseCase[] = [
         ],
       },
 
+      // ----------------- Musterbasierte Datentypen -----------------
       {
         groupLabel: "🔣 Musterbasierte Datentypen",
         fields: [
           {
             value: "regex",
-          label: "Muster (Regex)",
-          tooltip: "Generiert Werte anhand eines Muster-Ausdrucks (Regex), z. B. AB-[0-9]{5}.",
-          editableValues: true,
-          defaultValues: [
-            "[A-Z]{4}[0-9]{7}",
-            "[A-Z0-9]{10}",
-            "[A-Z]{3}-[0-9]{4}",
-            "[A-Z]{2}[0-9]{6}",
-            "[0-9]{4}-[0-9]{4}",
-            "[A-Z][0-9]{3}[A-Z]",
-            "[A-Z0-9]{5}",
-            "[A-F0-9]{8}"
-    ]
+            label: "Muster (Regex)",
+            tooltip:
+              "Generiert Werte anhand eines Muster-Ausdrucks (Regex), z. B. AB-[0-9]{5}.",
+            editableValues: true,
+            defaultValues: [
+              "[A-Z]{4}[0-9]{7}",
+              "[A-Z0-9]{10}",
+              "[A-Z]{3}-[0-9]{4}",
+              "[A-Z]{2}[0-9]{6}",
+              "[0-9]{4}-[0-9]{4}",
+              "[A-Z][0-9]{3}[A-Z]",
+              "[A-Z0-9]{5}",
+              "[A-F0-9]{8}",
+            ],
           },
         ],
       },
 
+      // ----------------- Identifikatoren -----------------
       {
         groupLabel: "🆔 Identifikatoren",
         fields: [
@@ -278,6 +281,7 @@ export const useCases: UseCase[] = [
         ],
       },
 
+      // ----------------- Benutzerdefiniert -----------------
       {
         groupLabel: "🧩 Benutzerdefiniert",
         fields: [
@@ -289,9 +293,95 @@ export const useCases: UseCase[] = [
           },
         ],
       },
+
+      // ----------------- Gesundheitsdaten -----------------
+      {
+        groupLabel: "🏥 Gesundheitsdaten",
+        fields: [
+          {
+            value: "body_height",
+            label: "Körpergröße (cm)",
+            tooltip: "Körpergröße in Zentimetern.",
+          },
+          {
+            value: "weight",
+            label: "Gewicht (kg)",
+            tooltip: "Körpergewicht in Kilogramm.",
+          },
+          {
+            value: "bmi",
+            label: "Body-Mass-Index (BMI)",
+            tooltip:
+              "Berechneter Body-Mass-Index basierend auf Größe und Gewicht.",
+          },
+        ],
+      },
     ],
   },
 
+  // ==================== Finanzen ====================
+  {
+    id: "finanzen",
+    label: "Finanzdaten",
+    description:
+      "Vordefinierte Finanz- und Zahlungswerte (Währung, Transaktionsarten, Kreditkartentypen, IBAN).",
+    icon: "💰",
+    fieldGroups: [
+      {
+        groupLabel: "💰 Finanzdaten",
+        fields: [
+          {
+            value: "IBAN",
+            label: "IBAN",
+            tooltip:
+              "Internationale Bankkontonummer (IBAN), z. B. DE89 3704 0044 0532 0130 00.",
+          },
+          {
+            value: "currency",
+            label: "Währung",
+            tooltip:
+              "Währungscode oder -bezeichnung, z. B. EUR, USD oder CHF. Liste ist anpassbar.",
+            editableValues: true,
+            defaultValues: ["EUR", "USD", "CHF", "GBP"],
+          },
+          {
+            value: "transactionType",
+            label: "Transaktionsart",
+            tooltip:
+              "Art der Transaktion (z. B. SEPA-Überweisung, Gehalt, Kartenzahlung). Liste kann erweitert werden.",
+            editableValues: true,
+            defaultValues: [
+              "SEPA-Überweisung",
+              "Gehalt / Lohn",
+              "Karten-Zahlung (Debit)",
+              "Gebühren / Kontoführungsgebühr",
+              "Rückerstattung / Refund",
+              "Internationale Überweisung (Swift)",
+              "Online-Zahlung",
+              "Mobile Payment",
+              "Abonnement / Abo-Zahlung",
+            ],
+          },
+          {
+            value: "creditcard",
+            label: "Kreditkarte",
+            tooltip:
+              "Kartentyp für die Generierung von Kreditkartennummern (VISA, Mastercard, Amex...).",
+            editableValues: true,
+            defaultValues: [
+              "VISA Karte",
+              "Mastercard",
+              "American Express",
+              "Girocard (EC)",
+              "Maestro",
+            ],
+          },
+        ],
+      },
+    ],
+  },
+
+  // ==================== Logistik ====================
   {
     id: "logistik",
     label: "Logistik",
@@ -305,15 +395,13 @@ export const useCases: UseCase[] = [
           {
             value: "unitName",
             label: "Containereinheit",
-            tooltip:
-              "Eindeutige Kennung der Containereinheit (z. B. ABCU1234567 oder CNT-123456A).",
-            // keine Liste → kein editableValues
+            tooltip: "Eindeutige Kennung der Containereinheit.",
           },
           {
             value: "containerTyp",
             label: "Containertyp",
             tooltip:
-              "Bauart des Containers, z. B. Standard, High Cube, Reefer (Kühlcontainer), Flat Rack oder Open Top.",
+              "Bauart des Containers (Standard, High Cube, Reefer, Open Top, Flat Rack).",
             editableValues: true,
             defaultValues: [
               "Standard",
@@ -326,50 +414,43 @@ export const useCases: UseCase[] = [
           {
             value: "attributeSize",
             label: "Containergröße (Fuß)",
-            tooltip:
-              "Standardgrößen: 20 ft, 40 ft oder 45 ft. High-Cube-Container sind höher als Standardcontainer.",
+            tooltip: "Standardgrößen: 20, 40, 45.",
             editableValues: true,
             defaultValues: ["20", "40", "45"],
           },
           {
             value: "attributeWeight",
             label: "Containergewicht (kg)",
-            tooltip:
-              "Gesamtgewicht inklusive Ladung. Wird je nach Containertyp und Größe realistisch berechnet.",
+            tooltip: "Gesamtgewicht inklusive Ladung.",
           },
           {
             value: "attributeStatus",
             label: "Beladungsstatus",
-            tooltip:
-              "Zeigt an, ob der Container leer oder beladen ist. Wird automatisch aus dem Gewicht abgeleitet.",
+            tooltip: "Leer / teilbeladen / voll beladen.",
             editableValues: true,
             defaultValues: ["leer", "teilbeladen", "voll beladen"],
           },
           {
             value: "attributeDirection",
             label: "Transportrichtung",
-            tooltip:
-              "Gibt an, ob der Container importiert oder exportiert wird.",
+            tooltip: "Import / Export / Transshipment.",
             editableValues: true,
             defaultValues: ["Import", "Export", "Transshipment"],
           },
           {
             value: "timeIn",
             label: "Ankunftszeit im Terminal",
-            tooltip:
-              "Zeitpunkt, zu dem der Container im Terminal eintrifft (innerhalb der ETA des Schiffes).",
+            tooltip: "Zeitpunkt der Ankunft.",
           },
           {
             value: "timeOut",
             label: "Abfahrtszeit aus dem Terminal",
-            tooltip:
-              "Zeitpunkt, zu dem der Container das Terminal verlässt (innerhalb der ETD des Schiffes).",
+            tooltip: "Zeitpunkt der Abfahrt.",
           },
           {
             value: "dwelltime",
             label: "Verweildauer (Stunden)",
-            tooltip:
-              "Automatisch berechnete Aufenthaltszeit im Terminal (Abfahrtszeit minus Ankunftszeit).",
+            tooltip: "Abfahrtszeit minus Ankunftszeit.",
           },
         ],
       },
@@ -379,14 +460,12 @@ export const useCases: UseCase[] = [
           {
             value: "serviceName",
             label: "Servicename",
-            tooltip:
-              "Bezeichnung der Schiffslinie, z. B. „Europe–India Line“ oder „Transatlantic East“. ",
+            tooltip: "Bezeichnung der Schiffslinie.",
           },
           {
             value: "service_route",
             label: "Service-Route",
-            tooltip:
-              "Die Route, die der Carrier bedient, z. B. Asien–Europa oder Transatlantik.",
+            tooltip: "Route des Carriers.",
             editableValues: true,
             defaultValues: [
               "Asien–Europa",
@@ -399,26 +478,22 @@ export const useCases: UseCase[] = [
           {
             value: "linerName",
             label: "Reedereiname",
-            tooltip:
-              "Name der Reederei, der der Carrier angehört, z. B. Hapag-Lloyd oder CMA CGM.",
+            tooltip: "Name der Reederei.",
           },
           {
             value: "shipName",
             label: "Schiffsname",
-            tooltip:
-              "Name des Schiffes, das den Container transportiert (z. B. Ever Ace, MSC Gülsün).",
+            tooltip: "Name des Schiffes.",
           },
           {
             value: "eta",
             label: "ETA (Ankunftszeit)",
-            tooltip:
-              "Voraussichtliche Ankunftszeit des Schiffes im Hafen (Estimated Time of Arrival).",
+            tooltip: "Estimated Time of Arrival.",
           },
           {
             value: "etd",
             label: "ETD (Abfahrtszeit)",
-            tooltip:
-              "Voraussichtliche Abfahrtszeit des Schiffes aus dem Hafen (Estimated Time of Departure).",
+            tooltip: "Estimated Time of Departure.",
           },
           {
             value: "length_m",
@@ -428,120 +503,55 @@ export const useCases: UseCase[] = [
           {
             value: "loadTEU",
             label: "Geladene TEU",
-            tooltip:
-              "Anzahl der Container, die auf dem Schiff aktuell geladen sind.",
+            tooltip: "Anzahl geladener TEU.",
           },
           {
             value: "dischargeTEU",
             label: "Entladene TEU",
-            tooltip:
-              "Anzahl der Container, die im Hafen entladen werden.",
+            tooltip: "Anzahl entladener TEU.",
           },
         ],
       },
     ],
   },
-
-  {
-    id: "gesundheit",
-    label: "Gesundheitswesen",
-    description: "Patienten, Diagnosen, Behandlungen",
-    icon: "🏥",
-    fields: [
-      { value: "körpergröße", label: "Körpergröße (cm)" },
-      { value: "gewicht", label: "Gewicht (kg)" },
-      { value: "bmi", label: "Body-Mass-Index (BMI)" },
-      { value: "gewichtdiagnose", label: "Gewichtsdiagnose" },
-    ],
-  },
-
-  {
-    id: "finanzen",
-    label: "Finanzwesen",
-    description: "Transaktionen, Konten, Zahlungen",
-    icon: "💰",
-    fields: [
-      { value: "kontonummer", label: "Kontonummer" },
-      { value: "transaktionsdatum", label: "Transaktionsdatum" },
-      { value: "transaktionsart", label: "Transaktionsart" },
-      { value: "betrag", label: "Betrag" },
-      { value: "IBAN", label: "IBAN" },
-    ],
-  },
 ];
 
 // =====================================
-// Helper: Label & Tooltip Lookup
+// Helper: Field-Lookup
 // =====================================
 
-export const getLabelForType = (t?: FieldType | string): string => {
-  if (!t) return "";
+const findFieldDef = (t?: FieldType | string): UseCaseField | undefined => {
+  if (!t) return undefined;
   for (const uc of useCases) {
     if (uc.fields) {
       const f = uc.fields.find((ff) => ff.value === t);
-      if (f) return f.label;
+      if (f) return f;
     }
     if (uc.fieldGroups) {
       for (const g of uc.fieldGroups) {
         const f = g.fields.find((ff) => ff.value === t);
-        if (f) return f.label;
+        if (f) return f;
       }
     }
   }
-  return String(t);
+  return undefined;
+};
+
+export const getLabelForType = (t?: FieldType | string): string => {
+  const field = findFieldDef(t);
+  if (field?.label) return field.label;
+  return t ? String(t) : "";
 };
 
 export const getTooltipForType = (t?: FieldType | string): string => {
-  if (!t) return "";
-  for (const uc of useCases) {
-    if (uc.fields) {
-      const f = uc.fields.find((ff) => ff.value === t);
-      if (f?.tooltip) return f.tooltip;
-    }
-    if (uc.fieldGroups) {
-      for (const g of uc.fieldGroups) {
-        const f = g.fields.find((ff) => ff.value === t);
-        if (f?.tooltip) return f.tooltip;
-      }
-    }
-  }
+  const field = findFieldDef(t);
+  if (field?.tooltip) return field.tooltip;
   return "";
 };
 
-// =====================================
-// Helper: editierbare Feldtypen
-// =====================================
-
-export const isEditableFieldType = (t?: FieldType | string): boolean => {
-  if (!t) return false;
-  for (const uc of useCases) {
-    if (uc.fields) {
-      const f = uc.fields.find((ff) => ff.value === t);
-      if (f?.editableValues) return true;
-    }
-    if (uc.fieldGroups) {
-      for (const g of uc.fieldGroups) {
-        const f = g.fields.find((ff) => ff.value === t);
-        if (f?.editableValues) return true;
-      }
-    }
-  }
-  return false;
-};
-
-export const getDefaultValuesForType = (t?: FieldType | string): string[] => {
-  if (!t) return [];
-  for (const uc of useCases) {
-    if (uc.fields) {
-      const f = uc.fields.find((ff) => ff.value === t);
-      if (f?.defaultValues) return f.defaultValues;
-    }
-    if (uc.fieldGroups) {
-      for (const g of uc.fieldGroups) {
-        const f = g.fields.find((ff) => ff.value === t);
-        if (f?.defaultValues) return f.defaultValues;
-      }
-    }
-  }
-  return [];
+export const getDefaultValuesForType = (
+  t?: FieldType | string
+): string[] => {
+  const field = findFieldDef(t);
+  return field?.defaultValues ? [...field.defaultValues] : [];
 };
