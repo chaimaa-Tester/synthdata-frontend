@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import {
   useCases,
   FieldType,
-  getDefaultValuesForType,
+  getDefaultValuesForType
 } from "../types/fieldTypes";
 import { Tooltip } from "./Tooltip";
 
@@ -141,7 +141,7 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
   // -----------------------------
   // Render
   // -----------------------------
-
+  
   return (
     <div
       className="modal-backdrop"

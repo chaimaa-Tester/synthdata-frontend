@@ -376,6 +376,13 @@ export const useCases: UseCase[] = [
               "Maestro",
             ],
           },
+          {
+            value: "betrag",
+            label: "Betrag",
+            tooltip:
+              "Betrag in der ausgewählten Währung.",
+            editableValues: true
+          },
         ],
       },
     ],
@@ -520,7 +527,7 @@ export const useCases: UseCase[] = [
 // Helper: Field-Lookup
 // =====================================
 
-const findFieldDef = (t?: FieldType | string): UseCaseField | undefined => {
+export const findFieldDef = (t?: FieldType | string): UseCaseField | undefined => {
   if (!t) return undefined;
   for (const uc of useCases) {
     if (uc.fields) {

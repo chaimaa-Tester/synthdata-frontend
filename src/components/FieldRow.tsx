@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { UseCaseModal } from "./UseCaseModal";
-import { getLabelForType, getDefaultValuesForType } from "../types/fieldTypes";
+import { getLabelForType, getDefaultValuesForType, FieldType } from "../types/fieldTypes";
 import { NameSourceModal } from "./NameSourceModal"; // <-- eigenes Modal für Namensquelle
 
 type Props = {
@@ -15,6 +15,7 @@ type Props = {
   allFieldNames: string[];
   dragHandleProps?: any;
   onOpenValueEditor?: (idx: number) => void;
+  onEditValuesFromUseCaseModal?: (fieldType: FieldType, newValues: string[]) => void;
 };
 
 export const FieldRow: React.FC<Props> = ({
@@ -29,6 +30,7 @@ export const FieldRow: React.FC<Props> = ({
   allFieldNames,
   dragHandleProps,
   onOpenValueEditor,
+  onEditValuesFromUseCaseModal
 }) => {
   // Abhängigkeiten (Dropdown)
   const parseDeps = (text: string): string[] =>
@@ -395,9 +397,9 @@ export const FieldRow: React.FC<Props> = ({
               setShowUseCaseModal(false);
             }}
             onEditValues={(fieldType, newValues) => {
-              onChange(idx, "type", fieldType);
-              onChange(idx, "valueSource", "custom");
-              onChange(idx, "customValues", newValues);
+              if (onEditValuesFromUseCaseModal) {
+                onEditValuesFromUseCaseModal(fieldType, newValues);
+              }
               setShowUseCaseModal(false);
             }}
             currentRow={row}

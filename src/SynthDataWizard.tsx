@@ -10,13 +10,11 @@ import { FileUploadModal } from "./components/FileUploadModal";
 import { SortableFieldRow } from "./components/SortableFieldRow";
 import { FieldTableHeader } from "./components/FieldTableHeader";
 import { ExportOptions } from "./components/ExportOptions";
+import { CustomDistributionCanvas } from "./components/CustomDistributionCanvas";
+import { DependencyDistributionModal } from "./components/DependencyDistributionModal";
 import { useCases, FieldType, getDefaultValuesForType, getLabelForType } from "./types/fieldTypes";
 import { ValueListModal } from "./components/ValueListModal";
 
-
-import { CustomDistributionCanvas } from "./components/CustomDistributionCanvas";
-
-// NEU: dnd-kit imports
 import {
   DndContext,
   closestCenter,
@@ -30,11 +28,6 @@ import {
   verticalListSortingStrategy,
   arrayMove,
 } from "@dnd-kit/sortable";
-
-
-
-import { DependencyDistributionModal } from "./components/DependencyDistributionModal";
-
 // -------------------- Typen & Helpers --------------------
 
 // Use Cases werden jetzt im UseCaseModal verwaltet
@@ -247,6 +240,18 @@ export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({ profileId }) =
     setValueListRowIdx(null);
   };
 
+  const handleEditValuesFromUseCaseModal = (rowIdx: number, fieldType: FieldType, newValues: string[]) => {
+    setRows((prev) => {
+      const next = [...prev];
+      next[rowIdx] = {
+        ...next[rowIdx],
+        type: fieldType,
+        valueSource: newValues.length ? "custom" : "default",
+        customValues: newValues,
+      };
+      return next;
+    });
+  };
 
   const handleCloseDepModal = () => {
     setShowDepModal(false);
@@ -300,30 +305,6 @@ export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({ profileId }) =
     handleCloseDepModal();
   }; 
 
-  // // Validate that name-like fields have a proper dependency on a 'geschlecht' field
-  // const validateDependencies = (rowsToCheck: Row[]) => {
-  //   const errors: string[] = [];
-  //   const nameLike: FieldType[] = ["name", "vorname", "nachname"];
-  //   for (const r of rowsToCheck) {
-  //     if (nameLike.includes(r.type)) {
-  //       const depRaw = (r.dependency || "").split(",")[0]?.trim() || "";
-  //       if (!depRaw) {
-  //         errors.push(`Feld '${r.name || "(kein Name)"}' vom Typ '${r.type}' hat keine Abhängigkeit definiert.`);
-  //         continue;
-  //       }
-  //       const target = rowsToCheck.find((t) => t.name === depRaw);
-  //       if (!target) {
-  //         errors.push(`Feld '${r.name || "(kein Name)"}' hängt von '${depRaw}', dieses Feld existiert aber nicht.`);
-  //         continue;
-  //       }
-  //       if (target.type !== "geschlecht") {
-  //         errors.push(`Feld '${r.name || "(kein Name)"}' hängt von '${depRaw}', hat aber Typ '${target.type}' (erwartet 'geschlecht').`);
-  //       }
-  //     }
-  //   }
-  //   return errors;
-  // };
-
   // Diese Funktion mappt einen FELDTYP (type) auf die passende UseCase-ID.
   // WICHTIG: Hier wird ausschliesslich 'type' (nicht 'name') verwendet, um zu entscheiden,
   // welche UseCase(s) für den Export relevant sind.
@@ -346,13 +327,6 @@ export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({ profileId }) =
 
   const handleExport = async () => {
     try {
-      // Pre-export validation: ensure name-like fields depend on a 'geschlecht' field
-      // const depProblems = validateDependencies(rows);
-      // if (depProblems.length > 0) {
-      //   alert("Bitte beheben Sie die folgenden Abhängigkeits-Probleme vor dem Export:\n\n" + depProblems.join("\n"));
-      //   return;
-      // }
-
       // Hinzufügen der Use Case ID zum Export-Objekt
       // Hier werden ALLE Feldtypen gesammelt und dann auf UseCase-IDs gemappt.
       // Das bedeutet: selbst wenn der Benutzer dem Feld einen beliebigen Namen gegeben hat,
@@ -367,8 +341,14 @@ export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({ profileId }) =
       ))
       
       const exportData = {
-        rows: rows.map(row => ({
-          ...row,
+        rows: rows.map(r => ({
+          id: r.id,
+          name: r.name,
+          type: r.type,
+          dependency: r.dependency,
+          distributionConfig: r.distributionConfig,
+          valueSource: r.valueSource ?? "default",
+          customValues: r.customValues ?? []
         })),
         rowCount,
         format,
@@ -466,20 +446,6 @@ export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({ profileId }) =
     return () => clearTimeout(timeout);
   }, [rows, rowCount, format, lineEnding, profileId]);
 
-  const handleEditValuesFromUseCaseModal = (fieldType: FieldType, newValues: string[]) => {
-    if (activeRowIdx === null) return;
-    setRows((prev) => {
-      const copy = [...prev];
-      const row = { ...copy[activeRowIdx] };
-      // Setze nur type + customValues/valueSource — NICHT row.name
-      row.type = fieldType;
-      row.customValues = newValues.length ? newValues : [];
-      row.valueSource = newValues.length ? "custom" : "default";
-      copy[activeRowIdx] = row;
-      return copy;
-    });
-  };
-
   return (
     <div
       className="px-5 py-5 text-white"
@@ -526,7 +492,9 @@ export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({ profileId }) =
               allFieldNames={allFieldNames}
               onCustomDraw={() => handleCustomDraw(idx)}
               onOpenUploadModal={() => openUploadModal(idx)}
-             onOpenValueEditor={handleOpenValueListModal}
+              onOpenValueEditor={handleOpenValueListModal}
+              onEditValuesFromUseCaseModal={(fieldType, newValues) =>
+                handleEditValuesFromUseCaseModal(idx, fieldType, newValues)}
             />
           ))}
         </SortableContext>
