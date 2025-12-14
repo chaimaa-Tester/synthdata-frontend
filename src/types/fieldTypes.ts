@@ -293,28 +293,36 @@ export const useCases: UseCase[] = [
           },
         ],
       },
+    ],
+  },
 
-      // ----------------- Gesundheitsdaten -----------------
+  // ----------------- Gesundheitsdaten -----------------
+  {
+    id: "gesundheit",
+    label: "Gesundheitsdaten",
+    description: "Vordefinierte Gesundheitswerte (BMI, Größe, Gewicht etc.).",
+    icon: "🏥",
+    fields: [
       {
-        groupLabel: "🏥 Gesundheitsdaten",
-        fields: [
-          {
-            value: "body_height",
-            label: "Körpergröße (cm)",
-            tooltip: "Körpergröße in Zentimetern.",
-          },
-          {
-            value: "weight",
-            label: "Gewicht (kg)",
-            tooltip: "Körpergewicht in Kilogramm.",
-          },
-          {
-            value: "bmi",
-            label: "Body-Mass-Index (BMI)",
-            tooltip:
-              "Berechneter Body-Mass-Index basierend auf Größe und Gewicht.",
-          },
-        ],
+        value: "body_height",
+        label: "Körpergröße (cm)",
+        tooltip: "Körpergröße in Zentimetern.",
+      },
+      {
+        value: "weight",
+        label: "Gewicht (kg)",
+        tooltip: "Körpergewicht in Kilogramm.",
+      },
+      {
+        value: "bmi",
+        label: "Body-Mass-Index (BMI)",
+        tooltip:
+          "Berechneter Body-Mass-Index basierend auf Größe und Gewicht. Die Felder Gewicht und Größe müssen erzeugt werden damit ein Wert für BMI zustande kommt!",
+      },
+      {
+        value: "bmi-status",
+        label: "BMI-Status",
+        tooltip: "Kategorisiert den BMI-Wert gemäß den WHO-Standards. Das Feld BMI muss erzeugt werden damit dieses Feld generiert werden kann!"
       },
     ],
   },

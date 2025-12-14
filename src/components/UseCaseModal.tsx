@@ -472,13 +472,21 @@ export const UseCaseModal: React.FC<UseCaseModalProps> = ({
                                     }}
                                   >
                                     <button
-                                      className="btn btn-sm btn-secondary w-100 d-flex align-items-center justify-content-center"
+                                      className={`btn btn-sm ${
+                                        field.editableValues ? "btn-secondary" : "btn-outline-secondary"
+                                      } w-100 d-flex align-items-center justify-content-center`}
+                                      disabled={!field.editableValues}                                
                                       onClick={(e) => {
+                                        if (!field.editableValues) return;
                                         e.preventDefault();
                                         e.stopPropagation();
                                         openValueEditor(field);
                                       }}
-                                      title="Eigene Werte für dieses Feld definieren"
+                                      title={
+                                        field.editableValues
+                                          ? "Eigene Werte für dieses Feld definieren"
+                                          : "Dieses Feld erlaubt keine Bearbeitung der Werte"
+                                      }
                                       style={{ gap: 8 }}
                                     >
                                       <span style={{ fontSize: 14 }}>
