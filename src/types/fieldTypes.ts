@@ -8,7 +8,7 @@ export type FieldType =
   | "alter"
   | "email"
   | "telefon"
-  | "Date"
+  | "date"
   | "Integer"
   | "körpergröße"
   | "gewicht"
@@ -60,11 +60,39 @@ export type UseCase = {
 // Einheitliche, deutsche Labels für die Feldtypen
 export const useCases: UseCase[] = [
   {
+    id: "custom",
+    label: "Allgemeine Felder",
+    description: "Name, Datum, E-Mail, Telefon, Geschlecht, Alter, Adresse, ",
+    icon: "",
+    fields: [
+      { value: "name", label: "Vollständiger Name", tooltip: "" },
+      { value: "date", label: "Datum", tooltip: "" },
+      { value: "email", label: "E-Mail", tooltip: "" },
+      { value: "telefon", label: "Telefonnummer", tooltip: "" },
+      { value: "geschlecht", label: "Geschlecht", tooltip: "" },
+      { value: "alter", label: "Alter", tooltip: "" },
+      { value: "vorname", label: "Vorname", tooltip: "" },
+      { value: "nachname", label: "Nachname", tooltip: "" },
+
+
+
+
+
+
+
+
+
+      
+    ],
+  },
+  {
+    
     id: "logistik",
     label: "Logistik",
     description: "Simulation von Containerbewegungen, Schiffsanläufen und Reedereidaten im Hafen.",
     icon: "🚢",
     fieldGroups: [
+
       {
         groupLabel: "📦 Containerdaten",
         fields: [
@@ -101,12 +129,7 @@ export const useCases: UseCase[] = [
     description: "Patienten, Diagnosen, Behandlungen",
     icon: "🏥",
     fields: [
-      { value: "name", label: "Patientenname" },
-      { value: "vorname", label: "Vorname" },
-      { value: "nachname", label: "Nachname" },
-      { value: "geschlecht", label: "Geschlecht" },
-      { value: "alter", label: "Alter" },
-      { value: "Date", label: "Geburtsdatum" },
+      { value: "date", label: "Geburtsdatum" },
       { value: "körpergröße", label: "Körpergröße (cm)" },
       { value: "gewicht", label: "Gewicht (kg)" },
       { value: "bmi", label: "Body-Mass-Index (BMI)" },
@@ -119,15 +142,12 @@ export const useCases: UseCase[] = [
     description: "Transaktionen, Konten, Zahlungen",
     icon: "💰",
     fields: [
-      { value: "name", label: "Kundenname" },
       { value: "kontonummer", label: "Kontonummer" },
-      { value: "transaktionsdatum", label: "Transaktionsdatum" },
-      { value: "email", label: "E-Mail" },
-      { value: "telefon", label: "Telefon" },
-      { value: "transaktionsart", label: "Transaktionsart" },
+      { value: "transaktionsart", label: "Transaktionsart", tooltip: "SEPA-Überweisung, Lastschrift, Kreditkartenzahlung, Bargeldabhebung, Online-Zahlung" },
       { value: "betrag", label: "Betrag" },
     ],
   },
+
 ];
 
 export const getLabelForType = (t?: FieldType | string) => {

@@ -1,6 +1,27 @@
 import React, { useRef, useState, useEffect } from "react";
 import { ReactSketchCanvas } from "react-sketch-canvas";
 
+const gaussianSmooth = (arr: number[], sigma = 2): number[] => {
+  const kernelRadius = Math.max(1, Math.floor(sigma * 3));
+  const kernel: number[] = [];
+  let kernelSum = 0;
+
+  for (let i = -kernelRadius; i <= kernelRadius; i++) {
+    const value = Math.exp(-0.5 * (i / sigma) ** 2);
+    kernel.push(value);
+    kernelSum += value;
+  }
+
+  return arr.map((_, idx) => {
+    let acc = 0;
+    for (let k = -kernelRadius; k <= kernelRadius; k++) {
+      const j = Math.min(arr.length - 1, Math.max(0, idx + k));
+      acc += arr[j] * kernel[k + kernelRadius];
+    }
+    return acc / kernelSum;
+  });
+};
+
 export const CustomDistributionCanvas = ({ onSave }: { onSave: (data: { type: string; name: string; params: number[] }) => void }) => {
   const canvasRef = useRef<any>(null);
   const [fitLoading, setFitLoading] = useState(false);
@@ -26,31 +47,39 @@ export const CustomDistributionCanvas = ({ onSave }: { onSave: (data: { type: st
     const paths = await canvasRef.current?.exportPaths();
     if (!paths) return;
 
-    // Sammle alle y-Werte aus den Pfaden
-    const yPoints = paths.flatMap((stroke: any) => {
-      if (Array.isArray(stroke.paths) && stroke.paths.length > 0) {
-        return stroke.paths.map((p: any) => p.y);
-      }
-      return [];
-    });
-    console.log("Extrahierte Y-Punkte:", yPoints);
-    if (yPoints.length === 0) {
+    const rawPoints: { x: number; y: number }[] = paths.flatMap((stroke: any) =>
+      Array.isArray(stroke.paths)
+        ? stroke.paths.map((p: any) => ({ x: p.x as number, y: p.y as number }))
+        : []
+    );
+    if (rawPoints.length === 0) {
       setFitError("Keine gültigen Punkte zum Verarbeiten gefunden.");
       return;
     }
-    const minY = Math.min(...yPoints);
-    const maxY = Math.max(...yPoints);
-    const normalized = yPoints.map((y: number) => (y - minY) / (maxY - minY || 1));
-    // Werte glätten (einfacher Moving Average)
-    const smoothed = normalized.map((val: number, idx: number, arr: number[]) => {
-      const start = Math.max(0, idx - 2);
-      const end = Math.min(arr.length, idx + 3);
-      const window = arr.slice(start, end);
-      return (window.reduce((a, b) => a + b, 0)) / window.length;
-    });
-    setPreviewPoints(smoothed);
 
-    // Distribution Fit: Feedback-Logik
+    const xs = rawPoints.map(p => p.x);
+    const ys = rawPoints.map(p => p.y);
+
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+
+    // normalize to [0,1]
+    const normX = xs.map(x => (x - minX) / (maxX - minX || 1));
+    const normY = ys.map(y => (y - minY) / (maxY - minY || 1));
+
+    // downsample every 5th point
+    const downsampledIndices = normX.map((_, i) => i).filter(i => i % 5 === 0);
+    const downX = downsampledIndices.map(i => normX[i]);
+    const downY = downsampledIndices.map(i => normY[i]);
+
+    // smooth Y using gaussian smoothing
+    const smoothedY = gaussianSmooth(downY);
+
+    // set preview visualization
+    setPreviewPoints(smoothedY);
+
     setFitResult(null);
     setFitError(null);
     setFitLoading(true);
@@ -58,7 +87,7 @@ export const CustomDistributionCanvas = ({ onSave }: { onSave: (data: { type: st
       const response = await fetch("http://localhost:8000/api/fit-distribution", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ points: smoothed }),
+        body: JSON.stringify({ x: downX, y: smoothedY }),
       });
       if (!response.ok) {
         let msg = "Unbekannter Fehler";
@@ -76,7 +105,6 @@ export const CustomDistributionCanvas = ({ onSave }: { onSave: (data: { type: st
         p_value: result.p_value,
         parameters: result.parameters,
       });
-      // onSave(normalized);  <-- entfernt
       setFitCurve(result.fit_curve || null);
     } catch (e: any) {
       setFitError("Verbindungsfehler oder Server nicht erreichbar.");
