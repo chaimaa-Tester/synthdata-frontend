@@ -291,28 +291,36 @@ export const useCases: UseCase[] = [
           },
         ],
       },
+    ],
+  },
 
-      // ----------------- Gesundheitsdaten -----------------
+  // ----------------- Gesundheitsdaten -----------------
+  {
+    id: "gesundheit",
+    label: "Gesundheitsdaten",
+    description: "Vordefinierte Gesundheitswerte (BMI, Größe, Gewicht etc.).",
+    icon: "🏥",
+    fields: [
       {
-        groupLabel: "🏥 Gesundheitsdaten",
-        fields: [
-          {
-            value: "body_height",
-            label: "Körpergröße (cm)",
-            tooltip: "Körpergröße in Zentimetern.",
-          },
-          {
-            value: "weight",
-            label: "Gewicht (kg)",
-            tooltip: "Körpergewicht in Kilogramm.",
-          },
-          {
-            value: "bmi",
-            label: "Body-Mass-Index (BMI)",
-            tooltip:
-              "Berechneter Body-Mass-Index basierend auf Größe und Gewicht.",
-          },
-        ],
+        value: "body_height",
+        label: "Körpergröße (cm)",
+        tooltip: "Körpergröße in Zentimetern.",
+      },
+      {
+        value: "weight",
+        label: "Gewicht (kg)",
+        tooltip: "Körpergewicht in Kilogramm.",
+      },
+      {
+        value: "bmi",
+        label: "Body-Mass-Index (BMI)",
+        tooltip:
+          "Berechneter Body-Mass-Index basierend auf Größe und Gewicht. Die Felder Gewicht und Größe müssen erzeugt werden damit ein Wert für BMI zustande kommt!",
+      },
+      {
+        value: "bmi-status",
+        label: "BMI-Status",
+        tooltip: "Kategorisiert den BMI-Wert gemäß den WHO-Standards. Das Feld BMI muss erzeugt werden damit dieses Feld generiert werden kann!"
       },
     ],
   },
@@ -373,6 +381,13 @@ export const useCases: UseCase[] = [
               "Girocard (EC)",
               "Maestro",
             ],
+          },
+          {
+            value: "betrag",
+            label: "Betrag",
+            tooltip:
+              "Betrag in der ausgewählten Währung.",
+            editableValues: true
           },
         ],
       },
@@ -518,7 +533,7 @@ export const useCases: UseCase[] = [
 // Helper: Field-Lookup
 // =====================================
 
-const findFieldDef = (t?: FieldType | string): UseCaseField | undefined => {
+export const findFieldDef = (t?: FieldType | string): UseCaseField | undefined => {
   if (!t) return undefined;
   for (const uc of useCases) {
     if (uc.fields) {

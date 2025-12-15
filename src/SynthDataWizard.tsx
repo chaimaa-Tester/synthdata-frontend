@@ -35,6 +35,10 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 
+// -------------------- Typen & Helpers --------------------
+
+// Use Cases werden jetzt im UseCaseModal verwaltet
+
 interface SynthDataWizardProps {
   profileId: string;
 }
@@ -235,6 +239,19 @@ export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({
     setValueListRowIdx(null);
   };
 
+  const handleEditValuesFromUseCaseModal = (rowIdx: number, fieldType: FieldType, newValues: string[]) => {
+    setRows((prev) => {
+      const next = [...prev];
+      next[rowIdx] = {
+        ...next[rowIdx],
+        type: fieldType,
+        valueSource: newValues.length ? "custom" : "default",
+        customValues: newValues,
+      };
+      return next;
+    });
+  };
+
   const handleCloseDepModal = () => {
     setShowDepModal(false);
     setDepModalRowIdx(null);
@@ -284,6 +301,9 @@ export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({
     handleCloseDepModal();
   };
 
+  // Diese Funktion mappt einen FELDTYP (type) auf die passende UseCase-ID.
+  // WICHTIG: Hier wird ausschliesslich 'type' (nicht 'name') verwendet, um zu entscheiden,
+  // welche UseCase(s) für den Export relevant sind.
   const getUseCaseIdForFieldType = (fieldType: FieldType): string | null => {
     for (const uc of useCases) {
       if (
@@ -305,17 +325,29 @@ export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({
 
   const handleExport = async () => {
     try {
-      const allFieldTypes = rows.map((row) => row.type);
-      const usedUseCaseIds = Array.from(
-        new Set(
-          allFieldTypes
-            .map(getUseCaseIdForFieldType)
-            .filter(Boolean) as string[]
-        )
-      );
+      // Hinzufügen der Use Case ID zum Export-Objekt
+      // Hier werden ALLE Feldtypen gesammelt und dann auf UseCase-IDs gemappt.
+      // Das bedeutet: selbst wenn der Benutzer dem Feld einen beliebigen Namen gegeben hat,
+      // entscheidet der FELDTYP (rows[].type) welche UseCases gebraucht werden.
+      const allFieldTypes = rows.map(row => row.type)
 
+      // Filtern der eindeutigen Use Case IDs, die tatsächlich verwendet werden
+      const usedUseCaseIds = Array.from(new Set(
+        allFieldTypes
+          .map(getUseCaseIdForFieldType)
+          .filter(Boolean) as string[]
+      ))
+      
       const exportData = {
-        rows: rows.map((row) => ({ ...row })),
+        rows: rows.map(r => ({
+          id: r.id,
+          name: r.name,
+          type: r.type,
+          dependency: r.dependency,
+          distributionConfig: r.distributionConfig,
+          valueSource: r.valueSource ?? "default",
+          customValues: r.customValues ?? []
+        })),
         rowCount,
         format,
         lineEnding,
@@ -452,6 +484,8 @@ export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({
               onCustomDraw={() => handleCustomDraw(idx)}
               onOpenUploadModal={() => openUploadModal(idx)}
               onOpenValueEditor={handleOpenValueListModal}
+              onEditValuesFromUseCaseModal={(fieldType, newValues) =>
+                handleEditValuesFromUseCaseModal(idx, fieldType, newValues)}
             />
           ))}
         </SortableContext>
