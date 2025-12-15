@@ -56,9 +56,13 @@ export type FieldType =
   | "regex"
   | "uuid"
   | "custom"
+
+  // Gesundheitsdaten
   | "body_height"
   | "weight"
-  | "bmi";
+  | "bmi"
+  | "bmi-status"
+  
 
 // Felddefinition innerhalb eines UseCases
 export type UseCaseField = {
