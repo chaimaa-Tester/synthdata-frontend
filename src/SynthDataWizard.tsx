@@ -57,6 +57,8 @@ export type Row = {
     parameterB: string;
     extraParams?: string[];
     dependency?: string;
+    name_source?: "western" | "regional";
+    country?: string;
   };
 
   valueSource?: ValueSource;
@@ -185,6 +187,12 @@ export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({
         ...next[activeRowIdx],
         distributionConfig: {
           ...distributionData,
+          name_source:
+            distributionData.name_source ||
+            next[activeRowIdx].distributionConfig?.name_source,
+          country:
+            distributionData.country ||
+            next[activeRowIdx].distributionConfig?.country,
         },
         dependency:
           distributionData?.dependency ?? next[activeRowIdx].dependency ?? "",

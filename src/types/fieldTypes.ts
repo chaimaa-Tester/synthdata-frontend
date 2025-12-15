@@ -2,6 +2,17 @@
 // Zentrale Definitionen für Feldtypen und Use Cases
 // =====================================
 
+export type DistributionConfig = {
+  distribution: string;
+  parameterA: string;
+  parameterB: string;
+  extraParams?: string[];
+  dependency?: string;
+  // NEUE FELDER FÜR NAME-SOURCE:
+  name_source?: "western" | "regional";
+  country?: string;
+};
+
 export type FieldType =
   // logistik – Containerdaten
   | "unitName"

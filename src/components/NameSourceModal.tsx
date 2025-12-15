@@ -1,10 +1,17 @@
+// NameSourceModal.tsx - ANGEPASSTE VERSION
 import React, { useState } from "react";
 import { NAME_REGIONS, NAME_COUNTRIES } from "../types/nameSources";
+
+// NEU: Typ für die Rückgabe
+export type NameSourceSelection = {
+  source_type: "western" | "regional";
+  country?: string;  // Optional, nur bei "regional"
+};
 
 type NameSourceModalProps = {
   show: boolean;
   onClose: () => void;
-  onSelect: (source: string) => void;
+  onSelect: (selection: NameSourceSelection) => void; // GEÄNDERT
 };
 
 export const NameSourceModal: React.FC<NameSourceModalProps> = ({
@@ -18,6 +25,19 @@ export const NameSourceModal: React.FC<NameSourceModalProps> = ({
   if (!show) return null;
 
   const accent = "rgb(115, 67, 131)";
+
+  const handleConfirm = () => {
+    const selection: NameSourceSelection = {
+      source_type: mode,
+    };
+    
+    if (mode === "regional" && country) {
+      selection.country = country;
+    }
+    
+    onSelect(selection);
+    onClose();
+  };
 
   return (
     <div
@@ -43,7 +63,7 @@ export const NameSourceModal: React.FC<NameSourceModalProps> = ({
           boxShadow: "0 10px 25px rgba(0,0,0,0.25)",
         }}
       >
-        <h4 className="mb-2"> Test-Namensquellen anpassen</h4>
+        <h4 className="mb-2">Test-Namensquellen anpassen</h4>
         <p className="text-muted mb-3">
           Wählen Sie eine Region oder ein Land für die Namensgenerierung.
         </p>
@@ -57,7 +77,10 @@ export const NameSourceModal: React.FC<NameSourceModalProps> = ({
                 key={r.value}
                 type="button"
                 className="btn"
-                onClick={() => setMode(r.value as "western" | "regional")}
+                onClick={() => {
+                  setMode(r.value as "western" | "regional");
+                  if (r.value === "western") setCountry(""); // Reset country bei western
+                }}
                 style={{
                   backgroundColor: active ? accent : "transparent",
                   color: active ? "white" : accent,
@@ -105,11 +128,7 @@ export const NameSourceModal: React.FC<NameSourceModalProps> = ({
           <button
             className="btn"
             type="button"
-            onClick={() => {
-              const value = mode === "western" ? "western" : country;
-              onSelect(value);
-              onClose();
-            }}
+            onClick={handleConfirm}
             disabled={mode === "regional" && !country}
             style={{
               backgroundColor:
