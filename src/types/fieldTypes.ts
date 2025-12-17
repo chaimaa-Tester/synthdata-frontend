@@ -299,6 +299,7 @@ export const useCases: UseCase[] = [
       "Simulation von Containerbewegungen, Schiffsanläufen und Reedereidaten im Hafen.",
     icon: "🚢",
     fieldGroups: [
+
       {
         groupLabel: "📦 Containerdaten",
         fields: [
@@ -468,7 +469,12 @@ export const useCases: UseCase[] = [
       { value: "IBAN", label: "IBAN" },
     ],
   },
+
 ];
+
+// =====================================
+// Helper: Label & Tooltip Lookup
+// =====================================
 
 // =====================================
 // Helper: Label & Tooltip Lookup
