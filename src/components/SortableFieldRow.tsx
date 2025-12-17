@@ -15,6 +15,7 @@ export type SortableFieldRowProps = {
   onOpenUploadModal: (idx:number) => void;
   onOpenDependencyModal: (idx: number) => void;
   handleDeleteRow: (idx: number) => void;
+  onOpenValueEditor?: (idx: number) => void; // NEU: für den Stift
   allFieldNames: string[];
   dragHandleProps?: any;
 };
@@ -40,3 +41,4 @@ export const SortableFieldRow: React.FC<SortableFieldRowProps> = (props) => {
     </div>
   );
 };
+

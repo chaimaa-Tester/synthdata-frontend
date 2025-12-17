@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { UseCaseModal } from "./UseCaseModal";
-import { getLabelForType } from "../types/fieldTypes";
+import { getLabelForType, getDefaultValuesForType } from "../types/fieldTypes";
 
 type Props = {
   row: any;
@@ -8,11 +8,12 @@ type Props = {
   onChange: (idx: number, field: string, value: any) => void;
   onOpenModal: (idx: number) => void;
   onCustomDraw: (idx: number) => void;
-  onOpenUploadModal: (idx: number) => void;
+  onOpenUploadModal: (idx:  number) => void;
   onOpenDependencyModal?: (idx: number) => void;
   handleDeleteRow: (idx: number) => void;
   allFieldNames: string[];
   dragHandleProps?: any;
+  onOpenValueEditor?: (idx: number) => void;
 };
 
 export const FieldRow: React.FC<Props> = ({
@@ -26,7 +27,9 @@ export const FieldRow: React.FC<Props> = ({
   handleDeleteRow,
   allFieldNames,
   dragHandleProps,
+  onOpenValueEditor,
 }) => {
+  // Abhängigkeiten (Dropdown)
   const parseDeps = (text: string): string[] =>
     (text || "")
       .split(",")
@@ -36,12 +39,15 @@ export const FieldRow: React.FC<Props> = ({
   const toCommaString = (arr: string[]) =>
     Array.from(new Set(arr.filter(Boolean))).join(", ");
 
-  const allOptions: string[] = useMemo(() => {
-    return allFieldNames.filter((name) => name && name !== row.name);
-  }, [allFieldNames, row.name]);
+  const allOptions: string[] = useMemo(
+    () => allFieldNames.filter((name) => name && name !== row.name),
+    [allFieldNames, row.name]
+  );
 
   const [selected, setSelected] = useState<string[]>(() =>
+   
     parseDeps(row.dependency)
+  
   );
   useEffect(() => {
     setSelected(parseDeps(row.dependency));
@@ -115,10 +121,7 @@ export const FieldRow: React.FC<Props> = ({
     distributionMode === mode;
 
   return (
-    <div
-      className="row mb-2 align-items-center flex-nowrap"
-      style={{ minWidth: 1400 }} // NEU: Breite angepasst für neue Spalte
-    >
+    <div className="row mb-2 align-items-center">
       {/* Drag Handle */}
       <div
         className="col-auto d-flex align-items-center px-0"
@@ -145,11 +148,11 @@ export const FieldRow: React.FC<Props> = ({
         />
       </div>
 
-      {/* Feldtyp - wie Feldname */}
+      {/* Feldtyp (nur lesen, öffnet UseCase-Modal) */}
       <div className="col-2">
         <input
           className="form-control"
-          value={getLabelForType(row.type)}
+          value={typeDisplay}
           readOnly
           onClick={() => setShowUseCaseModal(true)}
           style={{
@@ -277,6 +280,10 @@ export const FieldRow: React.FC<Props> = ({
         />
       </div>
 
+      {/* Verteilung & Aktionen */}
+      <div className="col-4 d-flex align-items-center">
+        <button
+          className="btn me-3"
       {/* Verteilung & Löschen */}
       <div className="col-3 d-flex align-items-center">
         <div
@@ -486,17 +493,37 @@ export const FieldRow: React.FC<Props> = ({
             </svg>
           </button>
         </div>
+
+          {/* weitere Action-Buttons (Upload, Draw, etc.) */}
       </div>
 
-      {/* NEU: Use Case Modal */}
+      {/* UseCase Modal */}
       <UseCaseModal
         show={showUseCaseModal}
         onClose={() => setShowUseCaseModal(false)}
         onSelectField={(fieldType) => {
+            // Nur den Feldtyp setzen
+            onChange(idx, "type", fieldType);
+
+            // Falls es vordefinierte Werte gibt, direkt übernehmen
+            const defaults = getDefaultValuesForType(fieldType);
+            if (defaults.length > 0) {
+              onChange(idx, "valueSource", "default");
+              onChange(idx, "customValues", defaults);
+            }
+
+            setShowUseCaseModal(false);
+          }}
+          onEditValues={(fieldType, newValues) => {
+            // Typ setzen (z. B. regex)
           onChange(idx, "type", fieldType);
+            // Benutzerdefinierte Liste speichern – NICHT im Namen!
+            onChange(idx, "valueSource", "custom");
+            onChange(idx, "customValues", newValues);
           setShowUseCaseModal(false);
         }}
       />
+      </div>
     </div>
   );
 };
