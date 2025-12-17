@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { UseCaseModal } from "./UseCaseModal";
-import { getLabelForType, getDefaultValuesForType } from "../types/fieldTypes";
+import { getLabelForType, getDefaultValuesForType, FieldType } from "../types/fieldTypes";
+import { NameSourceModal } from "./NameSourceModal"; // <-- eigenes Modal für Namensquelle
 
 type Props = {
   row: any;
@@ -14,6 +15,7 @@ type Props = {
   allFieldNames: string[];
   dragHandleProps?: any;
   onOpenValueEditor?: (idx: number) => void;
+  onEditValuesFromUseCaseModal?: (fieldType: FieldType, newValues: string[]) => void;
 };
 
 export const FieldRow: React.FC<Props> = ({
@@ -28,6 +30,7 @@ export const FieldRow: React.FC<Props> = ({
   allFieldNames,
   dragHandleProps,
   onOpenValueEditor,
+  onEditValuesFromUseCaseModal
 }) => {
   // Abhängigkeiten (Dropdown)
   const parseDeps = (text: string): string[] =>
@@ -49,6 +52,7 @@ export const FieldRow: React.FC<Props> = ({
     parseDeps(row.dependency)
   
   );
+
   useEffect(() => {
     setSelected(parseDeps(row.dependency));
   }, [row.dependency]);
@@ -63,6 +67,8 @@ export const FieldRow: React.FC<Props> = ({
 
   // NEU: Use Case Modal State
   const [showUseCaseModal, setShowUseCaseModal] = useState(false);
+  // Namensquellen-Auswahl (für firstname/lastname/fullname)
+  const [showNameSourceModal, setShowNameSourceModal] = useState(false);
   // Premium UI states for the reset button
   const [resetHover, setResetHover] = useState(false);
   const [resetActive, setResetActive] = useState(false);
@@ -77,6 +83,7 @@ export const FieldRow: React.FC<Props> = ({
   }, []);
 
   const isChecked = (opt: string) => selected.includes(opt);
+
   const toggle = (opt: string) => {
     const next = isChecked(opt)
       ? selected.filter((s) => s !== opt)
@@ -119,6 +126,41 @@ export const FieldRow: React.FC<Props> = ({
 
   const isActiveMode = (mode: Exclude<DistributionMode, null>) =>
     distributionMode === mode;
+  // Anzeige im Feldtyp-Feld:
+  // – Basislabel aus fieldTypes
+  // – bei Regex zusätzlich erstes Muster / bei Listen erster Wert
+  const typeLabelBase = getLabelForType(row.type);
+  const firstCustom =
+    row.customValues && row.customValues.length > 0
+      ? String(row.customValues[0])
+      : "";
+  const typeExtra =
+    firstCustom && row.type === "regex"
+      ? ` – ${firstCustom}`
+      : firstCustom && row.type !== "regex"
+      ? ` (${firstCustom})`
+      : "";
+  const typeDisplay = typeLabelBase + typeExtra;
+
+  // Name-Felder (für 🌐-Icon)
+  const isNameField = ["firstname", "lastname", "fullname"].includes(row.type);
+
+  // Feldtypen, bei denen die Werteliste editierbar ist (Stift in der Tabellenzeile)
+  const editableFieldTypes = useMemo(
+    () => [
+      "containerTyp",
+      "attributeSize",
+      "attributeStatus",
+      "attributeDirection",
+      "service_route",
+      "enum",
+      "list",
+      "regex",
+    ],
+    []
+  );
+  const isEditableFieldType = (t: string | undefined) =>
+    !!t && editableFieldTypes.includes(t);
 
   return (
     <div className="row mb-2 align-items-center">
@@ -149,7 +191,7 @@ export const FieldRow: React.FC<Props> = ({
       </div>
 
       {/* Feldtyp (nur lesen, öffnet UseCase-Modal) */}
-      <div className="col-2">
+      <div className="col-2" style={{ position: "relative" }}>
         <input
           className="form-control"
           value={typeDisplay}
@@ -157,11 +199,34 @@ export const FieldRow: React.FC<Props> = ({
           onClick={() => setShowUseCaseModal(true)}
           style={{
             cursor: "pointer",
-            backgroundColor: "white",
-            color: row.type ? "black" : "#6c757d",
+            backgroundColor: "White",
+            color: row.type ? "black" : "#00070eff",
           }}
           placeholder="Feldtyp wählen"
         />
+
+        {isNameField && (
+  <span
+    onClick={() => setShowNameSourceModal(true)}
+    style={{
+      position: "absolute",
+      right: 20,
+      top: "50%",
+      transform: "translateY(-50%)",
+      fontSize: 18,
+      cursor: "pointer",
+      color: "rgb(115, 67, 131)",          // dezentes Grau
+      opacity: 0.65,
+      userSelect: "none",
+    }}
+    onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+    onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.65")}
+    title="Namensquelle auswählen"
+  >
+    🌍
+  </span>
+)}
+
       </div>
 
       {/* Abhängigkeit Dropdown */}
@@ -474,55 +539,58 @@ export const FieldRow: React.FC<Props> = ({
               background: "none",
               border: "none",
               marginLeft: 8,
+              fontSize: "22px",
+              cursor: "pointer",
             }}
             onClick={() => handleDeleteRow(idx)}
             title="Zeile löschen"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="22"
-              height="22"
-              fill="white"
-              viewBox="0 0 16 16"
-            >
-              <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5.5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6zm2 .5a.5.5 0 0 1 .5-.5.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6z" />
-              <path
-                fillRule="evenodd"
-                d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1 0-2h3.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1H14a1 1 0 0 1 1 1zm-3-1a.5.5 0 0 0-.5-.5h-2a.5.5 0 0 0-.5.5V3h3V2zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118z"
-              />
-            </svg>
+            🗑️
           </button>
         </div>
 
           {/* weitere Action-Buttons (Upload, Draw, etc.) */}
       </div>
 
-      {/* UseCase Modal */}
-      <UseCaseModal
-        show={showUseCaseModal}
-        onClose={() => setShowUseCaseModal(false)}
-        onSelectField={(fieldType) => {
-            // Nur den Feldtyp setzen
-            onChange(idx, "type", fieldType);
-
-            // Falls es vordefinierte Werte gibt, direkt übernehmen
-            const defaults = getDefaultValuesForType(fieldType);
-            if (defaults.length > 0) {
-              onChange(idx, "valueSource", "default");
-              onChange(idx, "customValues", defaults);
-            }
-
+      {/* UseCaseModal */}
+        {showUseCaseModal && (
+        <UseCaseModal
+          show={showUseCaseModal}
+          onClose={() => setShowUseCaseModal(false)}
+          onSelectField={(fieldType) => {
+              onChange(idx, "type", fieldType);
+              const defaults = getDefaultValuesForType(fieldType);
+              if (defaults.length > 0 && !row.customValues) {
+                onChange(idx, "valueSource", "default");
+                onChange(idx, "customValues", defaults);
+              }
+              setShowUseCaseModal(false);
+            }}
+            onEditValues={(fieldType, newValues) => {
+              if (onEditValuesFromUseCaseModal) {
+              onEditValuesFromUseCaseModal(fieldType, newValues);
+              }
             setShowUseCaseModal(false);
           }}
-          onEditValues={(fieldType, newValues) => {
-            // Typ setzen (z. B. regex)
-          onChange(idx, "type", fieldType);
-            // Benutzerdefinierte Liste speichern – NICHT im Namen!
-            onChange(idx, "valueSource", "custom");
-            onChange(idx, "customValues", newValues);
-          setShowUseCaseModal(false);
-        }}
-      />
+            currentRow={row}
+        />
+        )}
+
+        {/* NameSourceModal (für 🌐) */}
+        {showNameSourceModal && (
+          <NameSourceModal
+            show={showNameSourceModal}
+            onClose={() => setShowNameSourceModal(false)}
+            onSelect={(selection) => {
+              // NameSourceSelection hat { source_type, country }
+              onChange(idx, "nameSource", selection.source_type);
+              if (selection.country) {
+                onChange(idx, "nameCountry", selection.country);
+              }
+              setShowNameSourceModal(false);
+            }}
+          />
+        )}
       </div>
     </div>
   );

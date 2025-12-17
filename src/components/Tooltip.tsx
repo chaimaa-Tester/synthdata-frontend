@@ -68,7 +68,7 @@ export const Tooltip: React.FC<Props> = ({ content, children, className }) => {
             background: "rgb(31, 53, 88)",
             color: "white",
             padding: "8px 10px",
-            borderRadius: 6,
+            borderRadius: 10,
             zIndex: 20000,
             maxWidth: 320,
             boxShadow: "0 6px 18px rgba(0,0,0,0.2)",

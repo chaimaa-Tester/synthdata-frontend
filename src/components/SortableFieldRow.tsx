@@ -2,6 +2,7 @@ import React from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { FieldRow } from "./FieldRow";
+import { FieldType } from "../types/fieldTypes";
 
 // FieldType wird jetzt im UseCaseModal definiert
 
@@ -15,7 +16,8 @@ export type SortableFieldRowProps = {
   onOpenUploadModal: (idx:number) => void;
   onOpenDependencyModal: (idx: number) => void;
   handleDeleteRow: (idx: number) => void;
-  onOpenValueEditor?: (idx: number) => void; // NEU: für den Stift
+  onOpenValueEditor?: (idx: number) => void;
+  onEditValuesFromUseCaseModal?: (fieldType: FieldType, newValues: string[]) => void;
   allFieldNames: string[];
   dragHandleProps?: any;
 };

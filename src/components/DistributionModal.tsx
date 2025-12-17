@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { NameSourceModal, type NameSourceSelection } from "./NameSourceModal";
 
 // Props für das Modal
 type DistributionModalProps = {
@@ -27,8 +28,12 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
       parameterA: "",
       parameterB: "",
       extraParams: [] as string[],
+      name_source: initialData?.name_source ?? undefined,
+      country: initialData?.country ?? undefined,
     }
   );
+
+  const [showNameSourceModal, setShowNameSourceModal] = useState(false);
 
   // Synchronisiert die Form-Daten mit den Initialdaten
   useEffect(() => {
@@ -38,9 +43,20 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
         parameterA: "",
         parameterB: "",
         extraParams: [] as string[],
+        name_source: initialData?.name_source ?? undefined,
+        country: initialData?.country ?? undefined,
       }
     );
   }, [initialData]);
+
+  const handleNameSourceSelect = (selection: NameSourceSelection) => {
+    setForm((prev: typeof form) => ({
+      ...prev,
+      name_source: selection.source_type,
+      country: selection.country || null,
+    }));
+    setShowNameSourceModal(false);
+  };
 
   // Handler zum Ändern eines zusätzlichen Parameters
   const handleExtraParamChange = (idx: number, value: string) => {
@@ -321,6 +337,22 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
           )}
         </div>
 
+        {/* Namensquelle Auswahl (nur für Namensfelder) */}
+        {["vorname", "nachname", "name", "vollständigername"].includes(fieldType.toLowerCase()) && (
+          <div className="mb-3">
+            <label className="form-label">Namensquelle</label>
+            <button
+              type="button"
+              className="btn btn-outline-secondary w-100"
+              onClick={() => setShowNameSourceModal(true)}
+            >
+              {form.name_source
+                ? `Quelle: ${form.name_source}${form.country ? ` (${form.country})` : ""}`
+                : "Namensquelle wählen..."}
+            </button>
+          </div>
+        )}
+
         {/* Aktionen */}
         <div className="text-center mt-4">
           <button
@@ -336,6 +368,15 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
             Schließen
           </button>
         </div>
+
+        {/* NameSourceModal */}
+        {showNameSourceModal && (
+          <NameSourceModal
+            show={showNameSourceModal}
+            onClose={() => setShowNameSourceModal(false)}
+            onSelect={handleNameSourceSelect}
+          />
+        )}
       </div>
     </div>
   );
