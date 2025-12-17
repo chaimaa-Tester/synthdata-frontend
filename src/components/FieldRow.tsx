@@ -345,10 +345,6 @@ export const FieldRow: React.FC<Props> = ({
         />
       </div>
 
-      {/* Verteilung & Aktionen */}
-      <div className="col-4 d-flex align-items-center">
-        <button
-          className="btn me-3"
       {/* Verteilung & Löschen */}
       <div className="col-3 d-flex align-items-center">
         <div
@@ -548,8 +544,7 @@ export const FieldRow: React.FC<Props> = ({
             🗑️
           </button>
         </div>
-
-          {/* weitere Action-Buttons (Upload, Draw, etc.) */}
+        {/* weitere Action-Buttons (Upload, Draw, etc.) */}
       </div>
 
       {/* UseCaseModal */}
@@ -592,6 +587,5 @@ export const FieldRow: React.FC<Props> = ({
           />
         )}
       </div>
-    </div>
   );
 };
