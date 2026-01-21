@@ -41,6 +41,7 @@ import {
 
 interface SynthDataWizardProps {
   profileId: string;
+  onOpenProfileModal?: () => void;
 }
 
 export type ValueSource = "default" | "custom";
@@ -83,6 +84,7 @@ const makeDefaultRow = (): Row => ({
 
 export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({
   profileId,
+  onOpenProfileModal,
 }) => {
   const [rows, setRows] = useState<Row[]>([
     makeDefaultRow(),
@@ -456,15 +458,42 @@ export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({
         minHeight: "100vh",
       }}
     >
-      <div className="d-flex align-items-center mb-4">
-        <img src={logo} alt="SynthData Wizard Logo" height={110} />
-        <div>
-          <h3 className="ms-3">
-            SynthData
-            <br />
-            <span style={{ color: "rgb(229, 67, 244)" }}>Wizard</span>
-          </h3>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, width: "100%" }}>
+        <div className="d-flex align-items-center mb-4">
+          <img src={logo} alt="SynthData Wizard Logo" height={110} />
+          <div>
+            <h3 className="ms-3">
+              SynthData
+              <br />
+              <span style={{ color: "rgb(229, 67, 244)" }}>Wizard</span>
+            </h3>
+          </div>
         </div>
+        
+        {/* Person Icon Button mit Dropdown-Pfeil - rechte Ecke */}
+        <button
+          onClick={onOpenProfileModal}
+          title="Profil erstellen"
+          style={{
+            background: "rgb(135, 87, 155)",
+            border: "none",
+            color: "white",
+            borderRadius: 8,
+            padding: "8px 12px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+            transition: "background 200ms ease",
+            fontSize: 14,
+            marginLeft: "Auto",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = "rgb(155, 107, 175)")}
+          onMouseLeave={(e) => (e.currentTarget.style.background = "rgb(135, 87, 155)")}
+        >
+          👤 <span style={{ fontSize: 12 }}>▼</span>
+        </button>
       </div>
 
       <FieldTableHeader />
