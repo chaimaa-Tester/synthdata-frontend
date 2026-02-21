@@ -364,7 +364,7 @@ export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({
       };
 
       const response = await axios.post(
-        "http://127.0.0.1:8000/api/export",
+        "/api/export",
         exportData,
         { responseType: "blob" }
       );
@@ -401,7 +401,7 @@ export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({
     const fetchProfileData = async () => {
       try {
         const res = await axios.get(
-          `http://127.0.0.1:8000/profiles/${profileId}/data`
+          `/profiles/${profileId}/data`
         );
         if (res.data?.data) {
           const d = res.data.data;
@@ -429,7 +429,7 @@ export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({
 
     const timeout = setTimeout(async () => {
       try {
-        await axios.post(`http://localhost:8000/profiles/${profileId}/data`, {
+        await axios.post(`/profiles/${profileId}/data`, {
           rows,
           rowCount,
           format,

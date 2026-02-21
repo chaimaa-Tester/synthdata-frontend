@@ -84,7 +84,7 @@ export const CustomDistributionCanvas = ({ onSave }: { onSave: (data: { type: st
     setFitError(null);
     setFitLoading(true);
     try {
-      const response = await fetch("http://localhost:8000/api/fit-distribution", {
+      const response = await fetch("/api/fit-distribution", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ x: downX, y: smoothedY }),

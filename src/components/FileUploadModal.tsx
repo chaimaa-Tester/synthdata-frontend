@@ -216,7 +216,7 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
       const formData = new FormData();
       formData.append("file", file);
 
-      fetch("http://localhost:8000/detect-distribution", {
+      fetch("/detect-distribution", {
         method: "POST",
         body: formData,
       })
@@ -248,7 +248,7 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
     formData.append("file", uploadedFile);
     formData.append("column", col);
 
-    fetch("http://localhost:8000/detect-distribution/column", {
+    fetch("/detect-distribution/column", {
       method: "POST",
       body: formData,
     })
