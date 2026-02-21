@@ -7,14 +7,21 @@ type Profile = {
 
 const LOCAL_STORAGE_KEY = "profiles";
 
-export const ProfileSelector = ({ onSelect }: { onSelect: (profileId: string) => void }) => {
+type ProfileSelectorProps = {
+  onSelect: (profileId: string) => void;
+  onCreate?: (profileId: string) => void;
+  onNavigateToApp?: () => void;
+  selectedProfileId?: string | null;
+};
+
+export const ProfileSelector = ({ onSelect, onCreate }: ProfileSelectorProps) => {
   const [profiles, setProfiles] = useState<Profile[] | null>(null);
   const [newProfileName, setNewProfileName] = useState("");
 
 useEffect(() => {
   const fetchProfiles = async () => {
     try {
-      const response = await fetch("http://localhost:8000/profiles");
+      const response = await fetch("http://127.0.0.1:8000/profiles");
       if (response.ok) {
         const data = await response.json();
         setProfiles(data);
@@ -49,7 +56,7 @@ useEffect(() => {
   const createProfile = async () => {
     if (!newProfileName.trim() || profiles === null) return;
     try {
-      const response = await fetch("http://localhost:8000/profiles", {
+      const response = await fetch("http://127.0.0.1:8000/profiles", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -63,6 +70,7 @@ useEffect(() => {
       const newProfile = await response.json();
       setProfiles((prev) => (prev ? [...prev, newProfile] : [newProfile]));
       setNewProfileName("");
+      onCreate?.(newProfile.id);
     } catch (error) {
       // Fehlerbehandlung (optional)
     }
@@ -72,7 +80,7 @@ useEffect(() => {
   const deleteProfile = async (id: string) => {
     try {
       // Profil auch im Backend löschen
-      await fetch(`http://localhost:8000/profiles/${id}`, {
+      await fetch(`http://127.0.0.1:8000/profiles/${id}`, {
         method: "DELETE",
       });
     } catch (error) {

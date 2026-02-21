@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { UseCaseModal } from "./UseCaseModal";
 import { getLabelForType, getDefaultValuesForType, FieldType } from "../types/fieldTypes";
 import { NameSourceModal } from "./NameSourceModal"; // <-- eigenes Modal für Namensquelle
@@ -29,7 +29,6 @@ export const FieldRow: React.FC<Props> = ({
   handleDeleteRow,
   allFieldNames,
   dragHandleProps,
-  onOpenValueEditor,
   onEditValuesFromUseCaseModal
 }) => {
   // Abhängigkeiten (Dropdown)
@@ -144,23 +143,6 @@ export const FieldRow: React.FC<Props> = ({
 
   // Name-Felder (für 🌐-Icon)
   const isNameField = ["firstname", "lastname", "fullname"].includes(row.type);
-
-  // Feldtypen, bei denen die Werteliste editierbar ist (Stift in der Tabellenzeile)
-  const editableFieldTypes = useMemo(
-    () => [
-      "containerTyp",
-      "attributeSize",
-      "attributeStatus",
-      "attributeDirection",
-      "service_route",
-      "enum",
-      "list",
-      "regex",
-    ],
-    []
-  );
-  const isEditableFieldType = (t: string | undefined) =>
-    !!t && editableFieldTypes.includes(t);
 
   return (
     <div className="row mb-2 align-items-center">

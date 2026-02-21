@@ -103,7 +103,7 @@ export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({
   const [valueListRowIdx, setValueListRowIdx] = useState<number | null>(null);
 
   const [showCustomDraw, setShowCustomDraw] = useState<boolean>(false);
-  const [activeFieldIndex, setActiveFieldIndex] = useState<number | null>(null);
+  const [_activeFieldIndex, setActiveFieldIndex] = useState<number | null>(null);
 
   // XLSX Sheets
   const [sheets, setSheets] = useState<ExportSheet[]>(() => [
@@ -364,7 +364,7 @@ export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({
       };
 
       const response = await axios.post(
-        "http://localhost:8000/api/export",
+        "http://127.0.0.1:8000/api/export",
         exportData,
         { responseType: "blob" }
       );
@@ -401,7 +401,7 @@ export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({
     const fetchProfileData = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:8000/profiles/${profileId}/data`
+          `http://127.0.0.1:8000/profiles/${profileId}/data`
         );
         if (res.data?.data) {
           const d = res.data.data;
