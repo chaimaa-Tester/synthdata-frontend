@@ -401,7 +401,7 @@ export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({
     const fetchProfileData = async () => {
       try {
         const res = await axios.get(
-          `/profiles/${profileId}/data`
+          `/api/profiles/${profileId}/data`
         );
         if (res.data?.data) {
           const d = res.data.data;
@@ -429,7 +429,7 @@ export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({
 
     const timeout = setTimeout(async () => {
       try {
-        await axios.post(`/profiles/${profileId}/data`, {
+        await axios.post(`/api/profiles/${profileId}/data`, {
           rows,
           rowCount,
           format,

@@ -21,7 +21,7 @@ export const ProfileSelector = ({ onSelect, onCreate }: ProfileSelectorProps) =>
 useEffect(() => {
   const fetchProfiles = async () => {
     try {
-      const response = await fetch("/profiles");
+      const response = await fetch("/api/profiles");
       if (response.ok) {
         const data = await response.json();
         setProfiles(data);
@@ -56,7 +56,7 @@ useEffect(() => {
   const createProfile = async () => {
     if (!newProfileName.trim() || profiles === null) return;
     try {
-      const response = await fetch("/profiles", {
+      const response = await fetch("/api/profiles", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -80,7 +80,7 @@ useEffect(() => {
   const deleteProfile = async (id: string) => {
     try {
       // Profil auch im Backend löschen
-      await fetch(`/profiles/${id}`, {
+      await fetch(`/api/profiles/${id}`, {
         method: "DELETE",
       });
     } catch (error) {
