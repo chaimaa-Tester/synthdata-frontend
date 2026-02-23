@@ -1,40 +1,127 @@
-// NameSourceModal.tsx - ANGEPASSTE VERSION
+/**
+ * NameSourceModal.tsx
+ * // Autor: CHAIMAA KARIOUI
+ *
+ * Projekt: SynthData Wizard
+ *
+ * Beschreibung:
+ * React-Modal zur Auswahl der Namensquelle für die Namensgenerierung.
+ * Der Nutzer kann zwischen einer westlichen Namensquelle ("western") oder
+ * einer regionalen Namensquelle ("regional") wählen. Bei "regional" muss
+ * zusätzlich ein Land ausgewählt werden.
+ *
+ * Inhalt:
+ * - Typdefinition NameSourceSelection für die Rückgabe der Auswahl
+ * - Props-Definition zur Steuerung (show/onClose/onSelect)
+ * - UI-Logik: Umschalten zwischen Modi, optionales Länder-Dropdown
+ * - Bestätigungslogik: Übergabe der Auswahl an Parent über onSelect
+ */
+
 import React, { useState } from "react";
 import { NAME_REGIONS, NAME_COUNTRIES } from "../types/nameSources";
 
-// NEU: Typ für die Rückgabe
+/**
+ * NameSourceSelection
+ *
+ * Zweck:
+ * Definiert die Datenstruktur, die bei der Bestätigung aus dem Modal
+ * an die Parent-Komponente zurückgegeben wird.
+ *
+ * @property source_type  Gewählte Namensquelle ("western" | "regional").
+ * @property country      Optionales Land (nur relevant, wenn source_type === "regional").
+ */
 export type NameSourceSelection = {
   source_type: "western" | "regional";
-  country?: string;  // Optional, nur bei "regional"
+  country?: string;
 };
 
+/**
+ * NameSourceModalProps
+ *
+ * Zweck:
+ * Props zur Steuerung des Modals durch die Parent-Komponente.
+ *
+ * @property show     Steuert, ob das Modal gerendert wird.
+ * @property onClose  Callback zum Schließen des Modals.
+ * @property onSelect Callback zum Übernehmen der Auswahl (liefert NameSourceSelection zurück).
+ */
 type NameSourceModalProps = {
   show: boolean;
   onClose: () => void;
-  onSelect: (selection: NameSourceSelection) => void; // GEÄNDERT
+  onSelect: (selection: NameSourceSelection) => void;
 };
 
+/**
+ * NameSourceModal
+ *
+ * Zweck:
+ * Rendert ein Modal zur Auswahl von Namensquellen.
+ *
+ * Implementierungsdetails:
+ * - Wenn show=false: return null (Modal wird nicht gerendert).
+ * - mode steuert die aktive Region ("western" oder "regional").
+ * - country speichert das ausgewählte Land (nur bei "regional").
+ * - handleConfirm baut ein Selection-Objekt und ruft onSelect + onClose auf.
+ */
 export const NameSourceModal: React.FC<NameSourceModalProps> = ({
   show,
   onClose,
   onSelect,
 }) => {
+  /**
+   * mode
+   *
+   * Zweck:
+   * Speichert den aktuell gewählten Modus der Namensquelle.
+   * Default ist "regional", damit der Nutzer direkt ein Land auswählen kann.
+   */
   const [mode, setMode] = useState<"western" | "regional">("regional");
+
+  /**
+   * country
+   *
+   * Zweck:
+   * Speichert das aktuell ausgewählte Land.
+   * Wird nur genutzt, wenn mode === "regional".
+   */
   const [country, setCountry] = useState<string>("");
 
+  /**
+   * show-Guard
+   *
+   * Zweck:
+   * Modal wird nur gerendert, wenn show=true.
+   */
   if (!show) return null;
 
+  /**
+   * accent
+   *
+   * Zweck:
+   * Akzentfarbe für aktive Buttons und Primäraktionen.
+   */
   const accent = "rgb(115, 67, 131)";
 
+  /**
+   * handleConfirm
+   *
+   * Zweck:
+   * Bestätigt die aktuelle Auswahl und übergibt sie an die Parent-Komponente.
+   *
+   * Implementierungsdetails:
+   * - selection enthält immer source_type.
+   * - country wird nur gesetzt, wenn mode === "regional" und country nicht leer ist.
+   * - ruft onSelect(selection) und schließt danach das Modal über onClose().
+   */
   const handleConfirm = () => {
     const selection: NameSourceSelection = {
       source_type: mode,
     };
-    
+
     if (mode === "regional" && country) {
       selection.country = country;
     }
-    
+
     onSelect(selection);
     onClose();
   };
@@ -79,7 +166,11 @@ export const NameSourceModal: React.FC<NameSourceModalProps> = ({
                 className="btn"
                 onClick={() => {
                   setMode(r.value as "western" | "regional");
-                  if (r.value === "western") setCountry(""); // Reset country bei western
+
+                  // Implementierungsdetail:
+                  // Beim Wechsel auf "western" wird country zurückgesetzt,
+                  // damit kein altes Land ungewollt in der Auswahl bleibt.
+                  if (r.value === "western") setCountry("");
                 }}
                 style={{
                   backgroundColor: active ? accent : "transparent",
@@ -119,20 +210,20 @@ export const NameSourceModal: React.FC<NameSourceModalProps> = ({
             type="button"
             style={{
               backgroundColor: "transparent",
-              color: "rgb(115, 67, 131)",
+              color: accent,
               border: "1px solid #ced4da",
             }}
           >
             Abbrechen
           </button>
+
           <button
             className="btn"
             type="button"
             onClick={handleConfirm}
             disabled={mode === "regional" && !country}
             style={{
-              backgroundColor:
-                mode === "regional" && !country ? "#e0d5ea" : accent,
+              backgroundColor: mode === "regional" && !country ? "#e0d5ea" : accent,
               color: "white",
               border: "1px solid " + accent,
               opacity: mode === "regional" && !country ? 0.7 : 1,

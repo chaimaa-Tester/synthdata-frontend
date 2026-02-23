@@ -12,9 +12,11 @@ type ProfileSelectorProps = {
   onCreate?: (profileId: string) => void;
   onNavigateToApp?: () => void;
   selectedProfileId?: string | null;
-};
+  show?: boolean;
+  onClose?: () => void;
+}; 
 
-export const ProfileSelector = ({ onSelect, onCreate }: ProfileSelectorProps) => {
+export const ProfileSelector = ({ onSelect, onCreate, show = true, onClose }: ProfileSelectorProps) => {
   const [profiles, setProfiles] = useState<Profile[] | null>(null);
   const [newProfileName, setNewProfileName] = useState("");
 
@@ -94,6 +96,8 @@ useEffect(() => {
       return updated;
     });
   };
+
+  if (!show) return null;
 
   if (profiles === null) {
     return null; // oder ein Ladezustand

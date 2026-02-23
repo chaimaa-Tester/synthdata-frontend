@@ -11,6 +11,7 @@ import {
 //  Neue Komponente, die innerhalb des Routers läuft
 const AppRoutes = () => {
   const [profileId, setProfileId] = useState<string | null>(localStorage.getItem("profileId"));
+  const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const navigate = useNavigate();
 
   // Profil auswählen: setzt das Profil und leitet weiter zur Hauptseite
@@ -34,21 +35,31 @@ const AppRoutes = () => {
   };
 
   return (
-    <Routes>
-      <Route
-        path="/"
-        element={
-          <ProfileSelector
-            onSelect={handleSelectProfile}
-            onCreate={handleCreateProfile}
-            // Neue Prop: Übergib navigate-Funktion für manuelles Navigieren
-            onNavigateToApp={() => navigate("/app")}
-            selectedProfileId={profileId}
-          />
-        }
+    <>
+      
+      {/* Profile Modal - nur öffnen wenn User das Icon klickt */}
+      <ProfileSelector
+        onSelect={handleSelectProfile}
+        onCreate={() => {}}
+        onNavigateToApp={() => {}}
+        selectedProfileId={profileId}
+        show={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
       />
-      <Route path="/app" element={<SynthDataWizard profileId={profileId ?? ""} />} />
-    </Routes>
+
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <SynthDataWizard 
+              profileId={profileId ?? ""} 
+              onOpenProfileModal={() => setShowProfileModal(true)}
+            />
+          }
+        />
+        <Route path="/app" element={<SynthDataWizard profileId={profileId ?? ""} onOpenProfileModal={() => setShowProfileModal(true)} />} />
+      </Routes>
+    </>
   );
 };
 
