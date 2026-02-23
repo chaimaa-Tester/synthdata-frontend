@@ -23,6 +23,7 @@ const AppRoutes = () => {
 
   return (
     <>
+      
       {/* Profile Modal - nur öffnen wenn User das Icon klickt */}
       <ProfileSelector
         onSelect={handleSelectProfile}
