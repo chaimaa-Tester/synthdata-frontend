@@ -1,10 +1,48 @@
+/**
+ * --------------------------------------------------------------------
+ * Projekt: SynthData Wizard
+ * Komponente: ProfileSelector
+ * Autor: Burak Arabaci
+ * 
+ *
+ * Beschreibung:
+ * Die Komponente "ProfileSelector" dient der Verwaltung und Auswahl
+ * von Benutzerprofilen innerhalb der Anwendung.
+ *
+ * Funktionale Aufgaben:
+ * - Laden vorhandener Profile über eine REST-API
+ * - Fallback auf localStorage bei Backend-Fehlern
+ * - Erstellung neuer Profile (POST)
+ * - Löschung bestehender Profile (DELETE)
+ * - Auswahl eines Profils über Callback-Funktion
+ *
+ * Technische Umsetzung:
+ * - React Functional Component
+ * - Verwendung von Hooks (useState, useEffect)
+ * - REST-Kommunikation via Fetch API
+ * - Clientseitiges Caching mittels localStorage
+ *
+ * Architekturprinzip:
+ * Die Komponente folgt dem Prinzip der "Single Source of Truth".
+ * Der React-State (profiles) kontrolliert die UI.
+ * Backend und localStorage dienen ausschließlich als Datenquellen.
+ * --------------------------------------------------------------------
+ */
+
 import { useEffect, useState } from "react";
 
+/**
+ * Datenmodell eines Profils,
+ * wie es vom Backend bereitgestellt wird.
+ */
 type Profile = {
   id: string;
   name: string;
 };
 
+/**
+ * Schlüssel zur Speicherung der Profile im localStorage.
+ */
 const LOCAL_STORAGE_KEY = "profiles";
 
 type ProfileSelectorProps = {
@@ -18,45 +56,67 @@ type ProfileSelectorProps = {
 
 export const ProfileSelector = ({ onSelect, onCreate, show = true, onClose }: ProfileSelectorProps) => {
   const [profiles, setProfiles] = useState<Profile[] | null>(null);
+
+  /**
+   * Controlled Input für die Profilerstellung.
+   */
   const [newProfileName, setNewProfileName] = useState("");
 
-useEffect(() => {
-  const fetchProfiles = async () => {
-    try {
-      const response = await fetch("/api/profiles");
-      if (response.ok) {
-        const data = await response.json();
-        setProfiles(data);
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
-      } else {
-        const storedProfiles = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (storedProfiles) {
-          setProfiles(JSON.parse(storedProfiles));
-        } else {
-          setProfiles([]);
-        }
-      }
-    } catch (error) {
-      console.error("Fehler beim Laden der Profile:", error);
-      const storedProfiles = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (storedProfiles) {
-        setProfiles(JSON.parse(storedProfiles));
-      } else {
-        setProfiles([]);
-      }
-    }
-  };
-  fetchProfiles();
-}, []);
+  /**
+   * Initiales Laden der Profile.
+   *
+   * Ablauf:
+   * 1) Versuch, Daten vom Backend abzurufen
+   * 2) Bei HTTP-Fehler oder Exception → Fallback auf localStorage
+   */
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      try {
+        const response = await fetch("/api/profiles");
 
+        if (response.ok) {
+          const data: Profile[] = await response.json();
+          setProfiles(data);
+
+          // Aktualisierung des lokalen Caches
+          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+        } else {
+          // HTTP-Fehler (z.B. 500 oder 404)
+          const storedProfiles = localStorage.getItem(LOCAL_STORAGE_KEY);
+          setProfiles(storedProfiles ? JSON.parse(storedProfiles) : []);
+        }
+      } catch (error) {
+        // Netzwerkfehler oder Backend nicht erreichbar
+        console.error("Fehler beim Laden der Profile:", error);
+
+        const storedProfiles = localStorage.getItem(LOCAL_STORAGE_KEY);
+        setProfiles(storedProfiles ? JSON.parse(storedProfiles) : []);
+      }
+    };
+
+    fetchProfiles();
+  }, []);
+
+  /**
+   * Synchronisiert Änderungen des States mit dem localStorage.
+   * Dadurch bleibt der Cache konsistent.
+   */
   useEffect(() => {
     if (profiles !== null) {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(profiles));
     }
   }, [profiles]);
 
+  /**
+   * Erstellt ein neues Profil.
+   *
+   * Validierung:
+   * - Name darf nicht leer sein
+   * - profiles muss initial geladen sein
+   */
   const createProfile = async () => {
     if (!newProfileName.trim() || profiles === null) return;
+
     try {
       const response = await fetch("/api/profiles", {
         method: "POST",
@@ -65,20 +125,29 @@ useEffect(() => {
         },
         body: JSON.stringify({ name: newProfileName.trim() }),
       });
+
       if (!response.ok) {
-        // Fehlerbehandlung (optional)
         return;
       }
-      const newProfile = await response.json();
+
+      const newProfile: Profile = await response.json();
+
+      // Funktionales State-Update zur Vermeidung von Race Conditions
       setProfiles((prev) => (prev ? [...prev, newProfile] : [newProfile]));
       setNewProfileName("");
       onCreate?.(newProfile.id);
     } catch (error) {
-      // Fehlerbehandlung (optional)
+      console.error("Fehler beim Erstellen des Profils:", error);
     }
   };
 
-  // Löschfunktion für Profile
+  /**
+   * Löscht ein Profil.
+   *
+   * Vorgehen:
+   * - Best-effort DELETE im Backend
+   * - Anschließend sofortiges Entfernen aus dem lokalen State
+   */
   const deleteProfile = async (id: string) => {
     try {
       // Profil auch im Backend löschen
@@ -99,8 +168,12 @@ useEffect(() => {
 
   if (!show) return null;
 
+  /**
+   * Ladezustand:
+   * Solange profiles noch null ist, wird nichts gerendert.
+   */
   if (profiles === null) {
-    return null; // oder ein Ladezustand
+    return null;
   }
 
   return (
@@ -116,6 +189,8 @@ useEffect(() => {
       }}
     >
       <h2>Wähle dein Profil</h2>
+
+      {/* Darstellung der vorhandenen Profile */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 20, marginTop: 40 }}>
         {profiles.map((p) => (
           <div
@@ -133,7 +208,12 @@ useEffect(() => {
               gap: 10,
             }}
           >
-            <span onClick={() => onSelect(p.id)} style={{ flex: 1 }}>{p.name}</span>
+            {/* Profil auswählen */}
+            <span onClick={() => onSelect(p.id)} style={{ flex: 1 }}>
+              {p.name}
+            </span>
+
+            {/* Löschbutton (stopPropagation verhindert gleichzeitige Auswahl) */}
             <button
               title="Profil löschen"
               onClick={(e) => {
@@ -156,6 +236,7 @@ useEffect(() => {
         ))}
       </div>
 
+      {/* Bereich zur Profilerstellung */}
       <div style={{ marginTop: 50 }}>
         <input
           placeholder="Neuer Profilname"
