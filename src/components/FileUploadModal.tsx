@@ -310,7 +310,7 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
     );
 
     // Daten für Chart.js
-    const labels = bins.map((b, i) => {
+    const labels = bins.map((b, _i) => {
       const end = b + binWidth;
       return `${b.toFixed(2)} - ${end.toFixed(2)}`;
     });

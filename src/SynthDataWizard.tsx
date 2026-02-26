@@ -216,7 +216,7 @@ export const SynthDataWizard: React.FC<SynthDataWizardProps> = ({
    * Steuert die Anzeige der Zeichenfläche für eine benutzerdefinierte Verteilung.
    */
   const [showCustomDraw, setShowCustomDraw] = useState<boolean>(false);
-  const [activeFieldIndex, setActiveFieldIndex] = useState<number | null>(null);
+  const [, setActiveFieldIndex] = useState<number | null>(null);
 
   // -------------------- State: XLSX Sheet-Konfiguration --------------------
 

@@ -10,11 +10,7 @@ const LOCAL_STORAGE_KEY = "profiles";
 export const ProfileSelector = ({ 
   onSelect, 
   show = true,
-  onClose,
-  onCreate,
-  onNavigateToApp,
-  selectedProfileId
-}: { 
+  onClose}: { 
   onSelect: (profileId: string) => void;
   show?: boolean;
   onClose?: () => void;
