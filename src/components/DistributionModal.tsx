@@ -1,7 +1,47 @@
+/**
+ * DistributionModal.tsx
+ * Autor: CHAIMAA KARIOUI && JAN KRÄMER
+ *
+ * Projekt: SynthData Wizard
+ *
+ * Beschreibung:
+ * Modal-Komponente zur Konfiguration einer Verteilung (Distribution) für ein Datenfeld.
+ * Der Nutzer kann abhängig vom Feldtyp (fieldType) eine passende Verteilung auswählen
+ * und deren Parameter (A/B sowie optionale Zusatzparameter) definieren.
+ *
+ * Zusätzlich:
+ * - Für Namensfelder (z. B. vorname/nachname/vollständigername) kann eine Namensquelle
+ *   über ein separates NameSourceModal festgelegt werden (western/regional + optionales Land).
+ *
+ * Implementierungsübersicht:
+ * - Form-State (form) enthält die aktuelle Konfiguration (distribution, parameterA/B, extraParams, name_source, country)
+ * - useEffect synchronisiert form, sobald initialData wechselt
+ * - Helper-Funktionen steuern UI/Logik abhängig vom Feldtyp:
+ *   - getAllowedDistributions: erlaubte Verteilungen je Feldtyp
+ *   - getInputType: HTML input type je Feldtyp
+ *   - getPlaceholder: dynamische Platzhaltertexte je Verteilung/Feldtyp
+ *   - getDistributionLabel: Anzeige-Label für Verteilungsnamen
+ *   - shouldShowParameterB: blendet ParameterB bei speziellen Verteilungen aus
+ *   - getStepValue: Schrittweite für numerische Inputs
+ * - Dynamische Zusatzparameter können hinzugefügt/entfernt werden
+ */
+
 import React, { useEffect, useState } from "react";
 import { NameSourceModal, type NameSourceSelection } from "./NameSourceModal";
 
-// Props für das Modal
+/**
+ * DistributionModalProps
+ *
+ * Zweck:
+ * Props zur Steuerung des Modals durch die Parent-Komponente.
+ *
+ * @property show           Steuert, ob das Modal gerendert wird.
+ * @property onClose        Callback zum Schließen des Modals.
+ * @property onSave         Callback zum Speichern der Konfiguration (liefert form-Daten).
+ * @property initialData    Initiale Konfiguration (z. B. gespeicherte Werte) für das Feld.
+ * @property fieldType      Feldtyp als String (beeinflusst erlaubte Verteilungen und UI).
+ * @property allFieldNames  Optional: Liste aller Feldnamen (hier nicht verwendet).
+ */
 type DistributionModalProps = {
   show: boolean;
   onClose: () => void;
@@ -11,7 +51,12 @@ type DistributionModalProps = {
   allFieldNames?: string[];
 };
 
-// Hauptkomponente für das Modal zur Verteilungsspezifikation
+/**
+ * DistributionModal
+ *
+ * Zweck:
+ * Rendert das Verteilungs-Konfigurationsmodal und verwaltet den Form-State.
+ */
 export const DistributionModal: React.FC<DistributionModalProps> = ({
   show,
   onClose,
@@ -19,9 +64,33 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
   initialData,
   fieldType,
 }) => {
+  /**
+   * show-Guard
+   *
+   * Zweck:
+   * Modal wird nur gerendert, wenn show=true.
+   */
   if (!show) return null;
 
-  // State für die Eingabefelder im Modal
+  // -----------------------------
+  // Form State
+  // -----------------------------
+
+  /**
+   * form
+   *
+   * Zweck:
+   * Enthält die aktuelle Verteilungskonfiguration, die im Modal bearbeitet wird.
+   *
+   * Struktur:
+   * - distribution: gewählte Verteilung
+   * - parameterA / parameterB: Hauptparameter
+   * - extraParams: zusätzliche Parameter (dynamisch)
+   * - name_source / country: Namensquelle (nur relevant bei Namensfeldern)
+   *
+   * Implementierungsdetail:
+   * - initialData wird bevorzugt genutzt, damit beim Bearbeiten vorhandene Werte angezeigt werden.
+   */
   const [form, setForm] = useState(
     initialData || {
       distribution: "",
@@ -33,9 +102,21 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
     }
   );
 
+  /**
+   * showNameSourceModal
+   *
+   * Zweck:
+   * Steuert die Sichtbarkeit des NameSourceModal (für Namensfelder).
+   */
   const [showNameSourceModal, setShowNameSourceModal] = useState(false);
 
-  // Synchronisiert die Form-Daten mit den Initialdaten
+  /**
+   * Sync form mit initialData
+   *
+   * Zweck:
+   * Wenn initialData aktualisiert wird (z. B. Zeilenwechsel),
+   * sollen die Eingaben im Modal wieder die neuen Initialwerte anzeigen.
+   */
   useEffect(() => {
     setForm(
       initialData || {
@@ -49,6 +130,21 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
     );
   }, [initialData]);
 
+  // -----------------------------
+  // NameSource Handling
+  // -----------------------------
+
+  /**
+   * handleNameSourceSelect
+   *
+   * Zweck:
+   * Übernimmt die Auswahl aus dem NameSourceModal in den form-State.
+   *
+   * Implementierung:
+   * - name_source wird immer gesetzt (western/regional)
+   * - country wird gesetzt, wenn vorhanden, sonst null
+   * - schließt anschließend das NameSourceModal
+   */
   const handleNameSourceSelect = (selection: NameSourceSelection) => {
     setForm((prev: typeof form) => ({
       ...prev,
@@ -58,19 +154,49 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
     setShowNameSourceModal(false);
   };
 
-  // Handler zum Ändern eines zusätzlichen Parameters
+  // -----------------------------
+  // Extra Parameter Handling
+  // -----------------------------
+
+  /**
+   * handleExtraParamChange
+   *
+   * Zweck:
+   * Aktualisiert einen bestimmten Zusatzparameter anhand seines Index.
+   *
+   * @param idx   Index in extraParams
+   * @param value Neuer Wert für den Zusatzparameter
+   */
   const handleExtraParamChange = (idx: number, value: string) => {
     const newExtraParams = [...(form.extraParams || [])];
     newExtraParams[idx] = value;
     setForm({ ...form, extraParams: newExtraParams });
   };
 
-  // Handler zum Hinzufügen eines weiteren Parameters
+  /**
+   * handleAddExtraParam
+   *
+   * Zweck:
+   * Fügt einen neuen, leeren Zusatzparameter hinzu.
+   */
   const handleAddExtraParam = () => {
     setForm({ ...form, extraParams: [...(form.extraParams || []), ""] });
   };
 
-  //  NEU: Verfügbare Verteilungen erweitert für mimesis-Typen
+  // -----------------------------
+  // Feldtyp-/Verteilungs-Logik
+  // -----------------------------
+
+  /**
+   * getAllowedDistributions
+   *
+   * Zweck:
+   * Liefert die erlaubten Verteilungen abhängig vom Feldtyp.
+   *
+   * Implementierungsdetail:
+   * - switch-case für verschiedene Feldtyp-Gruppen
+   * - Default: normal/uniform/gamma
+   */
   const getAllowedDistributions = (type: string) => {
     switch (type) {
       case "name":
@@ -101,27 +227,51 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
       case "land":
       case "email":
       case "telefon":
-        return ["categorical"]; //  Neue Feldtypen
+        return ["categorical"];
       default:
         return ["normal", "uniform", "gamma"];
     }
   };
 
-  // Input-Type erweitert
+  /**
+   * getInputType
+   *
+   * Zweck:
+   * Bestimmt den HTML input type für die Parameter-Eingabe.
+   *
+   * Implementierung:
+   * - date => "date"
+   * - numerische Feldtypen => "number"
+   * - sonst => "text"
+   */
   const getInputType = () => {
     if (fieldType.toLowerCase() === "date") return "date";
-    if (["integer", "körpergröße", "alter", "plz", "hausnummer", "gewicht"].includes(fieldType.toLowerCase())) 
+    if (
+      ["integer", "körpergröße", "alter", "plz", "hausnummer", "gewicht"].includes(
+        fieldType.toLowerCase()
+      )
+    )
       return "number";
     return "text";
   };
 
-  //  NEU: Verbesserte Platzhalter für mimesis-Typen
+  /**
+   * getPlaceholder
+   *
+   * Zweck:
+   * Liefert dynamische Platzhaltertexte je Feldtyp und Verteilung.
+   *
+   * @param distribution Aktuelle Verteilung
+   * @param paramKey     "a" oder "b" (Parameter A/B)
+   */
   const getPlaceholder = (distribution: string, paramKey: string) => {
     const fieldTypeLower = fieldType.toLowerCase();
-    
+
     if (fieldTypeLower === "date") return "TT.MM.JJJJ";
 
-    if (["körpergröße", "integer", "alter", "plz", "hausnummer", "gewicht"].includes(fieldTypeLower)) {
+    if (
+      ["körpergröße", "integer", "alter", "plz", "hausnummer", "gewicht"].includes(fieldTypeLower)
+    ) {
       switch (distribution) {
         case "uniform":
           return paramKey === "a" ? "Minimum" : "Maximum";
@@ -134,15 +284,35 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
       }
     }
 
-    if (["name", "vorname", "nachname", "vollständigername", "geschlecht", "adresse", "straße", "stadt", "land", "email", "telefon"].includes(fieldTypeLower)) {
-      if (distribution === "categorical")
+    if (
+      [
+        "name",
+        "vorname",
+        "nachname",
+        "vollständigername",
+        "geschlecht",
+        "adresse",
+        "straße",
+        "stadt",
+        "land",
+        "email",
+        "telefon",
+      ].includes(fieldTypeLower)
+    ) {
+      if (distribution === "categorical") {
         return paramKey === "a" ? "Werte (mit Komma)" : "Gewichte (mit Komma)";
+      }
     }
 
     return paramKey === "a" ? "Parameter A" : "Parameter B";
   };
 
-  // Verteilungsnamen für die Anzeige
+  /**
+   * getDistributionLabel
+   *
+   * Zweck:
+   * Konvertiert interne Dist-Namen in UI-Labels.
+   */
   const getDistributionLabel = (dist: string) => {
     switch (dist) {
       case "normal":
@@ -164,25 +334,66 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
     }
   };
 
-  // Soll Parameter B angezeigt werden?
+  /**
+   * shouldShowParameterB
+   *
+   * Zweck:
+   * Steuert, ob Parameter B im UI angezeigt wird.
+   *
+   * Implementierung:
+   * - exponential/poisson: false (nur ein Parameter)
+   * - categorical bei bestimmten Feldtypen: true (Gewichte)
+   * - sonst: true
+   */
   const shouldShowParameterB = (distribution: string) => {
     if (distribution === "exponential") return false;
     if (distribution === "poisson") return false;
-    if (["name", "vorname", "nachname", "geschlecht", "adresse", "straße", "stadt", "land", "email", "telefon"].includes(fieldType.toLowerCase()) && 
-        distribution === "categorical") {
-      return true; //  Bei kategorialen Verteilungen für Namen etc. Parameter B für Gewichte anzeigen
+
+    const ft = fieldType.toLowerCase();
+    if (
+      [
+        "name",
+        "vorname",
+        "nachname",
+        "geschlecht",
+        "adresse",
+        "straße",
+        "stadt",
+        "land",
+        "email",
+        "telefon",
+      ].includes(ft) &&
+      distribution === "categorical"
+    ) {
+      return true;
     }
+
     return true;
   };
 
-  // Schrittweite
+  /**
+   * getStepValue
+   *
+   * Zweck:
+   * Schrittweite für number-inputs, damit Eingaben sinnvoll sind.
+   */
   const getStepValue = () => {
     if (["körpergröße", "gewicht"].includes(fieldType.toLowerCase())) return "0.01";
     if (["integer", "alter", "plz", "hausnummer"].includes(fieldType.toLowerCase())) return "1";
     return undefined;
   };
 
+  /**
+   * allowedDistributions
+   *
+   * Zweck:
+   * Erlaubte Verteilungen für den aktuellen fieldType.
+   */
   const allowedDistributions = getAllowedDistributions(fieldType);
+
+  // -----------------------------
+  // Render
+  // -----------------------------
 
   return (
     <div
@@ -211,7 +422,6 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
           overflowY: "auto",
         }}
       >
-
         {/* Option 1 */}
         <div className="row mb-3">
           <div className="col-12">
@@ -227,6 +437,10 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
               value={form.distribution}
               onChange={(e) => {
                 const dist = e.target.value;
+
+                // Implementierungsdetail:
+                // Beim Wechsel der Distribution werden Parameter zurückgesetzt,
+                // damit keine falschen Parameterkombinationen gespeichert werden.
                 setForm({
                   ...form,
                   distribution: dist,
@@ -302,6 +516,8 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
                   padding: 0,
                 }}
                 onClick={() => {
+                  // Implementierungsdetail:
+                  // Entfernt den Zusatzparameter an Position idx.
                   const newExtraParams = [...(form.extraParams || [])];
                   newExtraParams.splice(idx, 1);
                   setForm({ ...form, extraParams: newExtraParams });
@@ -357,9 +573,11 @@ export const DistributionModal: React.FC<DistributionModalProps> = ({
         <div className="text-center mt-4">
           <button
             className="me-3 btn btn-success px-4 py-2"
-            onClick={() => onSave({
-              ...form,
-            })}
+            onClick={() =>
+              onSave({
+                ...form,
+              })
+            }
             disabled={!form.distribution}
           >
             Speichern

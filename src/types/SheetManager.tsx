@@ -1,6 +1,15 @@
 // src/SheetManager.tsx
+// Autor: CHAIMAA KARIOUI
 import React, { useMemo, useState } from "react";
 
+/**
+ * Datenstruktur eines exportierbaren Sheets (Tabellenblatt).
+ *
+ * @property id         Eindeutige ID des Sheets (z. B. für React keys und interne Referenzen).
+ * @property name       Anzeigename des Sheets (wird in der UI gezeigt und ist editierbar, falls nicht locked).
+ * @property fieldNames Liste der Feldnamen (Spalten/Attribute), die in diesem Sheet enthalten sein sollen.
+ * @property locked     Wenn true, ist das Sheet "fixiert" und darf nicht umbenannt/editiert/gelöscht werden.
+ */
 export type ExportSheet = {
   id: string;
   name: string;
@@ -8,6 +17,23 @@ export type ExportSheet = {
   locked?: boolean;
 };
 
+/**
+ * Props für die Komponente SheetManager.
+ *
+ * Der SheetManager kapselt die komplette UI-Logik zum:
+ * - Anzeigen einer Sheet-Liste
+ * - Anlegen/Löschen/Umbenennen von Sheets
+ * - Auswählen der Felder pro aktivem Sheet (Checkboxen)
+ * - optionalen Ein-/Ausklappen der gesamten Oberfläche
+ *
+ * @property sheets              Aktueller Zustand aller Sheets (vom Parent verwaltet).
+ * @property setSheets           Setter-Funktion, um die Sheet-Liste im Parent zu aktualisieren (State-Lifting).
+ * @property availableFieldNames Verfügbare Feldnamen (Quelle für die Checkbox-Liste).
+ * @property title               Überschrift der Komponente.
+ * @property collapsible         Wenn true, kann die UI eingeklappt/ausgeklappt werden.
+ * @property defaultOpen         Initialzustand des einklappbaren Bereichs.
+ * @property darkBgColor         Primärfarbe für Buttons/Badges (Standard: dunkles Blau).
+ */
 type SheetManagerProps = {
   sheets: ExportSheet[];
   setSheets: (next: ExportSheet[]) => void;
@@ -15,13 +41,29 @@ type SheetManagerProps = {
   title?: string;
 
   // Fenster schließen/öffnen
-  collapsible?: boolean;    // default: true
-  defaultOpen?: boolean;    // default: true
+  collapsible?: boolean; // default: true
+  defaultOpen?: boolean; // default: true
 
   // Styling (dein dunkles Blau)
-  darkBgColor?: string;     // default: "rgb(31, 53, 88)"
+  darkBgColor?: string; // default: "rgb(31, 53, 88)"
 };
 
+/**
+ * SheetManager (React-Komponente)
+ *
+ * Zweck:
+ * Diese Komponente verwaltet die UI für die Konfiguration von "Sheets" (Export-Tabellenblättern).
+ * Der State der Sheet-Liste liegt bewusst im Parent (sheets + setSheets), damit andere Komponenten
+ * denselben Zustand nutzen können (Single Source of Truth). Der SheetManager verwaltet nur UI-nahe
+ * Zustände (aktives Sheet, Open/Close).
+ *
+ * Hauptfunktionen:
+ * - Auswahl des aktiven Sheets (activeIdx)
+ * - Sicheres Aufbereiten der verfügbaren Feldnamen (Dedup + Trim + Filter)
+ * - Editieren der Feldauswahl pro Sheet (toggleField, selectAll, selectNone)
+ * - Anlegen / Löschen / Umbenennen von Sheets
+ * - Berücksichtigung des "locked"-Flags (Fix/Readonly-Logik)
+ */
 export const SheetManager: React.FC<SheetManagerProps> = ({
   sheets,
   setSheets,
@@ -31,11 +73,35 @@ export const SheetManager: React.FC<SheetManagerProps> = ({
   defaultOpen = true,
   darkBgColor = "rgb(31, 53, 88)",
 }) => {
+  /**
+   * Index des aktuell ausgewählten Sheets.
+   * Wird genutzt, um das aktive Sheet in der rechten Konfiguration anzuzeigen.
+   */
   const [activeIdx, setActiveIdx] = useState(0);
+
+  /**
+   * Steuert, ob die Komponente (bei collapsible=true) aufgeklappt ist.
+   */
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
+  /**
+   * Das aktuell aktive Sheet-Objekt (abgeleitet über activeIdx).
+   * Kann undefined sein, wenn sheets leer ist.
+   */
   const activeSheet = sheets[activeIdx];
 
+  /**
+   * safeFieldNames:
+   * Implementierungsdokumentation:
+   * - bereinigt availableFieldNames (trim)
+   * - filtert leere Strings raus
+   * - entfernt Duplikate (Set)
+   *
+   * Motivation:
+   * - verhindert doppelte Checkbox-Einträge
+   * - verhindert Einträge wie "", "   "
+   * - liefert eine stabile, UI-taugliche Liste
+   */
   const safeFieldNames = useMemo(
     () =>
       Array.from(
@@ -49,6 +115,24 @@ export const SheetManager: React.FC<SheetManagerProps> = ({
   );
 
   // ------- Helpers -------
+
+  /**
+   * setActiveSheetFields
+   *
+   * Zweck:
+   * Setzt die Feldliste (fieldNames) des aktuell aktiven Sheets.
+   *
+   * Verhalten / Validierungen:
+   * - bricht ab, wenn kein aktives Sheet existiert
+   * - bricht ab, wenn das aktive Sheet locked ist (Fix-Logik)
+   *
+   * Implementierung:
+   * - erstellt ein neues Array nextSheets via map (immutables Update)
+   * - ersetzt bei i === activeIdx nur fieldNames, alle anderen Sheets bleiben unverändert
+   * - ruft setSheets(nextSheets) auf, damit der Parent den State übernimmt
+   *
+   * @param nextFieldNames Neue Feldliste für das aktive Sheet.
+   */
   const setActiveSheetFields = (nextFieldNames: string[]) => {
     if (!activeSheet) return;
     if (activeSheet.locked) return; // FIX = nicht editierbar
@@ -59,6 +143,24 @@ export const SheetManager: React.FC<SheetManagerProps> = ({
     setSheets(nextSheets);
   };
 
+  /**
+   * toggleField
+   *
+   * Zweck:
+   * Schaltet einen Feldnamen im aktiven Sheet an/aus (Checkbox-Logik).
+   *
+   * Verhalten / Validierungen:
+   * - bricht ab, wenn kein aktives Sheet existiert
+   * - bricht ab, wenn activeSheet locked ist
+   *
+   * Implementierung:
+   * - prüft, ob fieldName bereits in activeSheet.fieldNames enthalten ist
+   * - wenn ja: entfernt es (filter)
+   * - wenn nein: fügt es hinzu (spread)
+   * - delegiert das eigentliche Update an setActiveSheetFields (Single Update Path)
+   *
+   * @param fieldName Der umzuschaltende Feldname.
+   */
   const toggleField = (fieldName: string) => {
     if (!activeSheet) return;
     if (activeSheet.locked) return;
@@ -71,18 +173,61 @@ export const SheetManager: React.FC<SheetManagerProps> = ({
     setActiveSheetFields(nextFieldNames);
   };
 
+  /**
+   * selectAll
+   *
+   * Zweck:
+   * Wählt alle verfügbaren Feldnamen für das aktive Sheet aus.
+   *
+   * Verhalten / Validierungen:
+   * - kein aktives Sheet => Abbruch
+   * - locked => Abbruch
+   *
+   * Implementierung:
+   * - übernimmt safeFieldNames vollständig als neue Feldliste
+   */
   const selectAll = () => {
     if (!activeSheet) return;
     if (activeSheet.locked) return;
     setActiveSheetFields([...safeFieldNames]);
   };
 
+  /**
+   * selectNone
+   *
+   * Zweck:
+   * Entfernt alle Feldzuordnungen im aktiven Sheet (alle Checkboxen aus).
+   *
+   * Verhalten / Validierungen:
+   * - kein aktives Sheet => Abbruch
+   * - locked => Abbruch
+   *
+   * Implementierung:
+   * - setzt fieldNames auf leeres Array
+   */
   const selectNone = () => {
     if (!activeSheet) return;
     if (activeSheet.locked) return;
     setActiveSheetFields([]);
   };
 
+  /**
+   * addSheet
+   *
+   * Zweck:
+   * Fügt ein neues Sheet zur Liste hinzu und macht es sofort aktiv.
+   *
+   * Implementierung:
+   * - erzeugt ein neues Sheet mit:
+   *   - id: Zeitstempel (Date.now) als einfache eindeutige ID
+   *   - name: "Sheet X" basierend auf aktueller Anzahl
+   *   - fieldNames: leer (muss der Nutzer auswählen)
+   *   - locked: false (standardmäßig editierbar)
+   * - hängt das Sheet an sheets an (immutables Append)
+   * - setzt den Parent-State über setSheets
+   * - setzt activeIdx auf das neue Sheet (letzter Index)
+   * - öffnet die UI (setIsOpen(true)), damit der Nutzer es direkt konfigurieren kann
+   */
   const addSheet = () => {
     const newSheet: ExportSheet = {
       id: `sheet-${Date.now()}`,
@@ -96,6 +241,25 @@ export const SheetManager: React.FC<SheetManagerProps> = ({
     setIsOpen(true);
   };
 
+  /**
+   * deleteSheet
+   *
+   * Zweck:
+   * Löscht ein Sheet an einem gegebenen Index, sofern es nicht locked ist.
+   *
+   * Verhalten / Validierungen:
+   * - wenn kein Sheet an idx existiert => Abbruch
+   * - wenn Sheet locked => Abbruch (Fix-Sheets können nicht gelöscht werden)
+   *
+   * Implementierungsdetails:
+   * - filtert das Sheet aus der Liste heraus (immutables Remove)
+   * - aktualisiert den Parent-State
+   * - korrigiert activeIdx:
+   *   - wenn danach keine Sheets mehr vorhanden: activeIdx = 0
+   *   - wenn activeIdx außerhalb des neuen Arrays liegt: activeIdx auf letzten gültigen Index setzen
+   *
+   * @param idx Index des zu löschenden Sheets.
+   */
   const deleteSheet = (idx: number) => {
     if (!sheets[idx] || sheets[idx].locked) return;
 
@@ -109,6 +273,22 @@ export const SheetManager: React.FC<SheetManagerProps> = ({
     if (activeIdx >= nextSheets.length) setActiveIdx(nextSheets.length - 1);
   };
 
+  /**
+   * renameActive
+   *
+   * Zweck:
+   * Benennt das aktive Sheet um (Input-Feld in der UI).
+   *
+   * Verhalten / Validierungen:
+   * - kein aktives Sheet => Abbruch
+   * - locked => Abbruch (Fix-Sheets dürfen nicht umbenannt werden)
+   *
+   * Implementierung:
+   * - immutables Update via map
+   * - ersetzt bei i === activeIdx nur "name"
+   *
+   * @param value Neuer Name für das aktive Sheet.
+   */
   const renameActive = (value: string) => {
     if (!activeSheet) return;
     if (activeSheet.locked) return;
@@ -119,9 +299,19 @@ export const SheetManager: React.FC<SheetManagerProps> = ({
     setSheets(nextSheets);
   };
 
+  /**
+   * Abgeleiteter Zustand: true, wenn das aktive Sheet gesperrt ist.
+   * Wird verwendet, um Inputs/Buttons/Checkboxen zu deaktivieren.
+   */
   const isLocked = !!activeSheet?.locked;
 
-  // Blau-Badge wie „Neues Sheet“
+  /**
+   * badgeStyle
+   *
+   * Zweck:
+   * Einheitliches Styling für Badges ("Fix", "Editierbar") passend zum dunklen Theme.
+   * Wird in mehreren UI-Stellen wiederverwendet (verhindert Duplikation).
+   */
   const badgeStyle: React.CSSProperties = {
     backgroundColor: darkBgColor,
     color: "white",
@@ -129,6 +319,24 @@ export const SheetManager: React.FC<SheetManagerProps> = ({
     fontWeight: 600,
   };
 
+  /**
+   * Render-Dokumentation (UI-Implementierung):
+   *
+   * Layout:
+   * - Oberkopfzeile: Titel + optionaler Toggle-Button (collapsible)
+   * - Inhalt (wenn isOpen):
+   *   - links: Sheet-Liste (Auswahl + Fix-Badge + Löschen-Icon + "Neues Sheet")
+   *   - rechts: Konfiguration des aktiven Sheets (Name, Felder, Alle/Keine, Liste, ggf. Löschen-Button)
+   *
+   * Sicherheits-/Robustheitsaspekte:
+   * - Zugriff auf activeSheet wird über Optional Chaining abgesichert (activeSheet?.name)
+   * - Bei locked:
+   *   - Input disabled
+   *   - Buttons disabled
+   *   - Checkboxen disabled + UI-Opacity reduziert
+   * - deleteSheet wird in der Liste über stopPropagation aufgerufen, damit ein Klick auf 🗑️
+   *   nicht zusätzlich das Sheet als aktiv auswählt.
+   */
   return (
     <div className="row g-3">
       <div className="col-12 d-flex align-items-center justify-content-between">
@@ -175,7 +383,13 @@ export const SheetManager: React.FC<SheetManagerProps> = ({
                         borderColor: "rgba(0,0,0,0.06)",
                       }}
                     >
-                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <span
+                        style={{
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
                         {sheet.name}
                       </span>
 
@@ -267,9 +481,14 @@ export const SheetManager: React.FC<SheetManagerProps> = ({
                   </button>
                 </div>
 
-                <div className="list-group" style={{ maxHeight: 300, overflowY: "auto" }}>
+                <div
+                  className="list-group"
+                  style={{ maxHeight: 300, overflowY: "auto" }}
+                >
                   {safeFieldNames.length === 0 ? (
-                    <div className="text-muted p-2">Keine Feldnamen vorhanden.</div>
+                    <div className="text-muted p-2">
+                      Keine Feldnamen vorhanden.
+                    </div>
                   ) : (
                     safeFieldNames.map((name) => {
                       const checked = !!activeSheet?.fieldNames?.includes(name);
