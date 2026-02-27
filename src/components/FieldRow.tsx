@@ -1,6 +1,6 @@
 /**
  * FieldRow.tsx
- * // Autor: CHAIMAA KARIOUI && JAN KRÄMER
+ * Autor: CHAIMAA KARIOUI && JAN KRÄMER
  *
  * Projekt: SynthData Wizard
  *
@@ -83,7 +83,6 @@ export const FieldRow: React.FC<Props> = ({
   handleDeleteRow,
   allFieldNames,
   dragHandleProps,
-  onOpenValueEditor,
   onEditValuesFromUseCaseModal,
 }) => {
   // -----------------------------
@@ -393,38 +392,6 @@ export const FieldRow: React.FC<Props> = ({
    * Aktiviert das 🌍-Icon nur für Name-Felder.
    */
   const isNameField = ["firstname", "lastname", "fullname"].includes(row.type);
-
-  // -----------------------------
-  // Editierbare Feldtypen (Werteliste)
-  // -----------------------------
-
-  /**
-   * editableFieldTypes
-   *
-   * Zweck:
-   * Liste der Feldtypen, bei denen eine Werteliste üblicherweise editierbar ist.
-   */
-  const editableFieldTypes = useMemo(
-    () => [
-      "containerTyp",
-      "attributeSize",
-      "attributeStatus",
-      "attributeDirection",
-      "service_route",
-      "enum",
-      "list",
-      "regex",
-    ],
-    []
-  );
-
-  /**
-   * isEditableFieldType
-   *
-   * Zweck:
-   * Prüft, ob ein Feldtyp in der editierbaren Liste enthalten ist.
-   */
-  const isEditableFieldType = (t: string | undefined) => !!t && editableFieldTypes.includes(t);
 
   // -----------------------------
   // Render

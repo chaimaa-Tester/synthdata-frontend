@@ -1,5 +1,19 @@
+/**
+ * Autor: Jan Krämer
+ * 
+ * Beschreibung:
+ * In dieser Komponente wurden die ersten Grundfunktionalitäten für das AbhängigkeitsModal implementiert. Dieses soll eine Erweiterung
+ * für die Verteilung definieren können. Dabei wird es nur freigeschaltet wenn auch wirklich eine Abhängigkeit gesetzt wurde.
+ * Die Verteilung kann dann, in Zusammenspiel mit der angegebenen Abhängigkeit, definiert werden und so eine tiefere Ebene an Komplexität
+ * abbilden als nur die Standardverteilung.
+ */
+
 import React, { useEffect, useState } from "react";
 
+/**
+* Es werden Properties gesetzt welche vor Allem auf die angegebene Abhängigkeit eingehen und die Daten der zugehörigen Spalte
+* speichern. Diese werden dann bei der Erzeugung mit berücksichtigt.  
+*/ 
 type Props = {
   show: boolean;
   onClose: () => void;
@@ -9,6 +23,11 @@ type Props = {
   initialData?: any;
 };
 
+/**
+ * Die Definition der Komponente zum Öffnen des Modals und der Eingabe von abhängigen Verteilungen.
+ * @param param0 Die Properties werden übergeben und an die Komponente weitergereicht.
+ * @returns Ein PopUp Modal welches zur Eingabe der Verteilung dient.
+ */
 export const DependencyDistributionModal: React.FC<Props> = ({
   show,
   onClose,

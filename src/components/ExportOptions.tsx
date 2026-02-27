@@ -2,7 +2,7 @@
  * --------------------------------------------------------------------
  * Projekt: SynthData Wizard
  * Komponente: ExportOptions
- * Autor: Burak Arabaci
+ * Autor: Burak Arabaci, Jan Krämer, Chaimaa Karioui
  *
  * Beschreibung:
  * Diese Komponente stellt die zentralen Export-Optionen für die

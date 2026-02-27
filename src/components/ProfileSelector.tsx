@@ -2,7 +2,7 @@
  * --------------------------------------------------------------------
  * Projekt: SynthData Wizard
  * Komponente: ProfileSelector
- * Autor: Burak Arabaci
+ * Autor: Burak Arabaci, Chaimaa Karioui
  * 
  *
  * Beschreibung:
@@ -209,7 +209,7 @@ export const ProfileSelector = ({ onSelect, onCreate, show = true, onClose }: Pr
             }}
           >
             {/* Profil auswählen */}
-            <span onClick={() => onSelect(p.id)} style={{ flex: 1 }}>
+            <span onClick={() => {onSelect(p.id); onClose?.()}} style={{ flex: 1 }}>
               {p.name}
             </span>
 

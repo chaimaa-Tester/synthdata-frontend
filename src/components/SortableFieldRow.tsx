@@ -1,3 +1,12 @@
+/*
+Autoren: Jan Krämer, Chaimaa Karioui
+
+Beschreibung:
+Diese Komponente dient als Wrapper für die normalen FieldRows und implementiert die Funktionalitäten zum Drag&Drop verschieben der Zeilen.
+Es werden die benötigten Properties gesetzt und dann an die FieldRows weiter gegeben.
+*/
+
+
 import React from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";

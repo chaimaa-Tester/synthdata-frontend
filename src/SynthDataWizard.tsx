@@ -1,8 +1,7 @@
 /**
  * Projekt: SynthData Wizard
  * Datei: SynthDataWizard.tsx
- * Autor: CHAIMAA KARIOUI
- * Autor: JAN KRÄMER
+ * Autor: CHAIMAA KARIOUI & JAN KRÄMER
  *
  * Beschreibung:
  * Zentrale React-Komponente der Anwendung (Wizard-Ansicht).

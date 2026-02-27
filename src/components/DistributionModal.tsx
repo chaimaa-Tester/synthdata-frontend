@@ -1,6 +1,6 @@
 /**
  * DistributionModal.tsx
- * // Autor: CHAIMAA KARIOUI && JAN KRÄMER
+ * Autor: CHAIMAA KARIOUI && JAN KRÄMER
  *
  * Projekt: SynthData Wizard
  *

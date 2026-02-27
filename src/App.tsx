@@ -40,7 +40,7 @@ const AppRoutes = () => {
       {/* Profile Modal - nur öffnen wenn User das Icon klickt */}
       <ProfileSelector
         onSelect={handleSelectProfile}
-        onCreate={() => {}}
+        onCreate={() => {handleCreateProfile}}
         onNavigateToApp={() => {}}
         selectedProfileId={profileId}
         show={showProfileModal}

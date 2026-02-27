@@ -1,3 +1,12 @@
+/**
+ * Autor: Chaimaa Karioui
+ * 
+ * Beschreibung:
+ * Diese Komponente definiert die Funktionalitäten zum Öffnen und Bearbeiten des Werte Modals. Dieses zeigt dem Nutzer die von uns
+ * vordefinierten Werte eines Typen an und bietet dann die Möglichkeit diese zu bearbeiten. Dabei wird die Property "ValueSource"
+ * angepasst welche dem Backend angibt ob eine vordefinierte oder eigen erstelle Liste an Werten verwendet werden soll.
+ * Somit sollen Nutzer eine bessere Flexibilität beim Erzeugen ihrer Daten haben.
+ */
 import React, { useEffect, useState } from "react";
 
 type ValueSource = "default" | "custom";
