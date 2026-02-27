@@ -179,7 +179,10 @@ export const ProfileSelector = ({ onSelect, onCreate, show = true, onClose }: Pr
   return (
     <div
       style={{
-        background: "rgb(31, 53, 88)",
+        position: "fixed",
+        inset: 0,
+        zIndex: 1000,
+        background: "rgba(0,0,0,0.5)",
         color: "white",
         minHeight: "100vh",
         display: "flex",
